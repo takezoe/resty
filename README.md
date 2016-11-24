@@ -39,7 +39,7 @@ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
 ```
 
-Resty provides Swagger integration in default. Swagger JSON is provided at http://localhost:8080/swagger.json and also Swagger UI is available at http://localhost:8080/swagger-ui/ 
+Resty provides Swagger integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
 
 
 
