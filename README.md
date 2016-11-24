@@ -21,7 +21,7 @@ case class Message(message: String)
 
 Define a web listener that registers your controller.
 
-```
+```scala
 @WebListener
 class InitializeListener extends ServletContextListener {
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
@@ -35,7 +35,7 @@ class InitializeListener extends ServletContextListener {
 Let's test this controller.
 
 ```
-curl -XGET http://localhost:8080/hello/resty
+$ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
 ```
 
