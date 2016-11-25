@@ -2,7 +2,7 @@ package io.github.resty.util
 
 import java.lang.reflect.{Field, Member}
 
-import scala.tools.scalap.scalax.rules.scalasig.{ScalaSigParser, _}
+import org.json4s.scalap.scalasig._
 
 object ReflectionUtils {
 
