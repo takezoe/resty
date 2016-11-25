@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "org.eclipse.jetty"            %  "jetty-plus"                 % jettyVersion % "container",
   "org.eclipse.jetty"            %  "jetty-annotations"          % jettyVersion % "container",
   "org.json4s"                   %% "json4s-scalap"              % "3.5.0",
+  "com.netflix.hystrix"          %  "hystrix-core"               % "1.5.8",
 //  "javax"                        %  "javaee-web-api"             % "7.0"        % "provided",
 //  "io.swagger"                   %  "swagger-jaxrs"              % "1.5.10",
 //  "org.jboss.resteasy"           %  "resteasy-jaxrs"             % "3.1.0.CR3",
