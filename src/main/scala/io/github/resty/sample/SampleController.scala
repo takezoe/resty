@@ -34,7 +34,8 @@ class SampleController {
     Message("Hello " + in.name + "!")
   }
 
-  @Action(method = "GET", path = "/error", description="This operation always throws exception.")
+  @Action(method = "GET", path = "/error", description="This operation always throws exception.", deprecated = true)
+  @deprecated
   def error(): Unit = {
     throw new RuntimeException("test!!")
   }

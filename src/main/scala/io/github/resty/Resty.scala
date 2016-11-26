@@ -31,6 +31,7 @@ object Resty {
           annotation.method().toLowerCase(),
           annotation.path(),
           annotation.description(),
+          annotation.deprecated(),
           paramDefs,
           method,
           controller

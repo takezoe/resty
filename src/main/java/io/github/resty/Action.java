@@ -9,4 +9,5 @@ public @interface Action {
     String path();
     String method();
     String description() default "";
+    boolean deprecated() default false;
 }

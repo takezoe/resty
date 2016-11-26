@@ -39,6 +39,9 @@ class SwaggerController {
       if(action.description.nonEmpty){
         operation.setDescription(action.description)
       }
+      if(action.deperecated){
+        operation.setDeprecated(true)
+      }
 
       action.params.foreach { paramDef =>
         paramDef match {
@@ -90,11 +93,11 @@ class SwaggerController {
     }
 
     pathMap.foreach { case (key, path) =>
-        swagger.path(key, path)
+      swagger.path(key, path)
     }
 
     models.foreach { case (key, model) =>
-        swagger.addDefinition(key, model)
+      swagger.addDefinition(key, model)
     }
 
     swagger
