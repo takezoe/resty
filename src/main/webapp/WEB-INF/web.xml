@@ -15,10 +15,4 @@
         <servlet-name>HystrixMetricsStreamServlet</servlet-name>
         <url-pattern>/hystrix.stream</url-pattern>
     </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>default</servlet-name>
-        <url-pattern>/swagger-ui/*</url-pattern>
-    </servlet-mapping>
-
 </web-app>
