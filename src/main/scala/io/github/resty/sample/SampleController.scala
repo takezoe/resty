@@ -21,9 +21,15 @@ class SampleController {
   }
 
   @Action(method = "POST", path = "/hello")
-  def hello2(in: Hello): Unit = {
-    //Message("Hello " + in.name + "!")
+  def hello2(in: Hello): Message = {
+    Message("Hello " + in.name + "!")
   }
+
+  @Action(method = "GET", path = "/error")
+  def error(): Unit = {
+    throw new RuntimeException("test!!")
+  }
+
 }
 
 case class Hello(name: Option[String], age: Int, message: Message, names: Seq[String])
