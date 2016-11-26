@@ -1,7 +1,11 @@
 package io.github.resty
 
+import java.lang.reflect.InvocationTargetException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
+import com.netflix.hystrix.HystrixCommand.Setter
+import com.netflix.hystrix.exception.HystrixRuntimeException
+import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey}
 import io.github.resty.model.{ActionDef, ParamDef}
 import io.github.resty.util.JsonUtils
 import org.apache.commons.io.IOUtils
@@ -12,17 +16,28 @@ trait RestyKernel {
     Resty.findAction(request.getRequestURI, method) match {
       case Some((action, pathParams)) => {
         try {
-          setServletAPI(action, request, response)
-          prepareParams(request, pathParams, action.params) match {
-            case Left(errors) =>
-              processResponse(response, BadRequest(ErrorModel(errors)))
-            case Right(params) =>
-              val result = action.function.invoke(action.controller, params: _*)
-              processResponse(response, result)
-          }
+          new RestyActionCommand(action.method + " " + action.path,
+            try {
+              setServletAPI(action, request, response)
+              prepareParams(request, pathParams, action.params) match {
+                case Left(errors) =>
+                  processResponse(response, BadRequest(ErrorModel(errors)))
+                case Right(params) =>
+                  val result = action.function.invoke(action.controller, params: _*)
+                  processResponse(response, result)
+              }
+            } finally {
+              removeServletAPI(action)
+            }
+          ).execute()
         } catch {
-          case e: Exception =>
-            processResponse(response, InternalServerError(ErrorModel(Seq(e.toString))))
+          case e: HystrixRuntimeException => {
+            val cause = e.getCause match {
+              case e: InvocationTargetException => e.getCause
+              case e => e
+            }
+            processResponse(response, InternalServerError(ErrorModel(Seq(cause.toString))))
+          }
         }
       }
       case None => {
@@ -41,7 +56,7 @@ trait RestyKernel {
     }
   }
 
-  protected def removeServletAPI(action: ActionDef, request: HttpServletRequest, response: HttpServletResponse): Unit = {
+  protected def removeServletAPI(action: ActionDef): Unit = {
     action.controller match {
       case x: ServletAPI => {
         x.requestHolder.remove()
@@ -89,6 +104,14 @@ trait RestyKernel {
         writer.flush()
       }
     }
+  }
+
+  private class RestyActionCommand(key: String, f: => Unit) extends HystrixCommand[Unit](
+    Setter
+      .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
+      .andCommandKey(HystrixCommandKey.Factory.asKey(key))
+  ) {
+    override def run(): Unit = f
   }
 
 }
