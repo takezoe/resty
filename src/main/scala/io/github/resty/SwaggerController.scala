@@ -19,6 +19,15 @@ class SwaggerController {
   def swaggerJson() = {
     val swagger = new Swagger()
 
+    val appInfo = Resty.appInfo
+    if(appInfo.nonEmpty){
+      val info = new Info()
+      if(appInfo.title.nonEmpty){ info.setTitle(appInfo.title) }
+      if(appInfo.version.nonEmpty){ info.setTitle(appInfo.version) }
+      if(appInfo.description.nonEmpty){ info.setTitle(appInfo.description) }
+      swagger.setInfo(info)
+    }
+
     val pathMap = new mutable.HashMap[String, Path]()
     val models = new mutable.HashMap[String, Model]()
 
@@ -26,6 +35,10 @@ class SwaggerController {
       val path = pathMap.getOrElseUpdate(action.path, new Path())
       val operation = new Operation()
       operation.setOperationId(action.function.getName)
+
+      if(action.description.nonEmpty){
+        operation.setDescription(action.description)
+      }
 
       action.params.foreach { paramDef =>
         paramDef match {

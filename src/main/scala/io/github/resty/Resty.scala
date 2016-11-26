@@ -1,16 +1,24 @@
 package io.github.resty
 
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 
-import io.github.resty.model.{ActionDef, ParamDef}
+import io.github.resty.model.{AppInfo, ActionDef, ParamDef}
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
 object Resty {
 
-  private val actions = new CopyOnWriteArrayList[ActionDef]()
+  private val _appInfo = new AtomicReference[AppInfo](AppInfo())
+  private val _actions = new CopyOnWriteArrayList[ActionDef]()
   register(new SwaggerController())
+
+  def register(appInfo: AppInfo): Unit = {
+    _appInfo.set(appInfo)
+  }
+
+  def appInfo = _appInfo.get()
 
   def register(controller: AnyRef): Unit = {
     controller.getClass.getMethods.foreach { method =>
@@ -19,7 +27,14 @@ object Resty {
         val paramDefs = method.getParameters.map { param =>
           ParamDef(param.getName, param.getType)
         }
-        actions.add(ActionDef(annotation.method().toLowerCase(), annotation.path(), paramDefs, method, controller))
+        _actions.add(ActionDef(
+          annotation.method().toLowerCase(),
+          annotation.path(),
+          annotation.description(),
+          paramDefs,
+          method,
+          controller
+        ))
       }
     }
   }
@@ -27,7 +42,7 @@ object Resty {
   def findAction(path: String, method: String): Option[(ActionDef, Map[String, String])] = {
     val pathParams = new mutable.HashMap[String, String]()
 
-    actions.asScala.filter(_.method == method).find { action =>
+    _actions.asScala.filter(_.method == method).find { action =>
       val requestPath = path.split("/")
       val actionPath = action.path.split("/")
       if(requestPath.length == actionPath.length){
@@ -43,6 +58,6 @@ object Resty {
     }.map { action => (action, pathParams.toMap) }
   }
 
-  def allActions: Seq[ActionDef] = actions.asScala
+  def allActions: Seq[ActionDef] = _actions.asScala
 
 }

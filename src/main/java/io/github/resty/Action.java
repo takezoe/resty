@@ -8,4 +8,5 @@ import java.lang.annotation.*;
 public @interface Action {
     String path();
     String method();
+    String description() default "";
 }
