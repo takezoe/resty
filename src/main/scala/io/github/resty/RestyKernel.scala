@@ -70,7 +70,7 @@ trait RestyKernel {
     val converted = paramDefs.map { paramDef =>
       paramDef match {
         case ParamDef.Param(name, converter) => converter.convert(pathParams.get(name).getOrElse(request.getParameter(name)))
-        case ParamDef.Body(_, converter) => converter.convert(IOUtils.toString(request.getInputStream, "UTF-8"))
+        case ParamDef.Body(_, _, converter) => converter.convert(IOUtils.toString(request.getInputStream, "UTF-8"))
       }
     }
 

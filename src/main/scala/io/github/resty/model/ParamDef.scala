@@ -1,6 +1,7 @@
 package io.github.resty.model
 
 sealed trait ParamDef {
+  val name: String
   val converter: ParamConverter
 }
 
@@ -12,14 +13,14 @@ object ParamDef {
     } else if(clazz == classOf[Option[_]]){
       Param(name, new ParamConverter.OptionStringConverter(name))
     } else {
-      Body(clazz, new ParamConverter.JsonConverter(clazz))
+      Body(name, clazz, new ParamConverter.JsonConverter(clazz))
     }
   }
 
   // TODO Path, query, form or header
   case class Param(name: String, converter: ParamConverter) extends ParamDef
 
-  case class Body(clazz: Class[_], converter: ParamConverter) extends ParamDef
+  case class Body(name: String, clazz: Class[_], converter: ParamConverter) extends ParamDef
 
 }
 

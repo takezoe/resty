@@ -54,9 +54,10 @@ class SwaggerController {
             parameter.setType("string") // TODO Int, Long and Option support
             operation.addParameter(parameter)
           }
-          case ParamDef.Body(clazz, _) => {
+          case ParamDef.Body(name, clazz, _) => {
             val parameter = new BodyParameter()
             parameter.setSchema(new RefModel(clazz.getSimpleName))
+            parameter.setName(name)
             parameter.setRequired(true)
             models.put(clazz.getSimpleName, createModel(clazz, models))
             operation.addParameter(parameter)
