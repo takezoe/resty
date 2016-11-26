@@ -3,8 +3,7 @@ Resty
 
 Super easy REST API framework for Scala
 
-Example
--------
+##  Getting started
 
 This is a simplest controller example:
 
@@ -39,7 +38,12 @@ $ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
 ```
 
+## Swagger integration
+
 Resty provides Swagger integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
 
+## Hystrix integration
+
+Resty also provides Hystrix integration in default. Hystrix stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
 
 
