@@ -6,7 +6,7 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import com.netflix.hystrix.HystrixCommand.Setter
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey}
-import io.github.resty.model.{ActionDef, ParamDef}
+import io.github.resty.model.{ActionDef, ControllerDef, ParamDef}
 import io.github.resty.util.JsonUtils
 import org.apache.commons.io.IOUtils
 
@@ -14,20 +14,20 @@ trait RestyKernel {
 
   protected def processAction(request: HttpServletRequest, response: HttpServletResponse, method: String): Unit = {
     Resty.findAction(request.getRequestURI, method) match {
-      case Some((action, pathParams)) => {
+      case Some((controller, action, pathParams)) => {
         try {
           new RestyActionCommand(action.method + " " + action.path,
             try {
-              setServletAPI(action, request, response)
+              setServletAPI(controller, request, response)
               prepareParams(request, pathParams, action.params) match {
                 case Left(errors) =>
                   processResponse(response, BadRequest(ErrorModel(errors)))
                 case Right(params) =>
-                  val result = action.function.invoke(action.controller, params: _*)
+                  val result = action.function.invoke(controller.instance, params: _*)
                   processResponse(response, result)
               }
             } finally {
-              removeServletAPI(action)
+              removeServletAPI(controller)
             }
           ).execute()
         } catch {
@@ -46,8 +46,8 @@ trait RestyKernel {
     }
   }
 
-  protected def setServletAPI(action: ActionDef, request: HttpServletRequest, response: HttpServletResponse): Unit = {
-    action.controller match {
+  protected def setServletAPI(controller: ControllerDef, request: HttpServletRequest, response: HttpServletResponse): Unit = {
+    controller.instance match {
       case x: ServletAPI => {
         x.requestHolder.set(request)
         x.responseHolder.set(response)
@@ -56,8 +56,8 @@ trait RestyKernel {
     }
   }
 
-  protected def removeServletAPI(action: ActionDef): Unit = {
-    action.controller match {
+  protected def removeServletAPI(controller: ControllerDef): Unit = {
+    controller.instance match {
       case x: ServletAPI => {
         x.requestHolder.remove()
         x.responseHolder.remove()

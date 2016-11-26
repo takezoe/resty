@@ -23,18 +23,26 @@ class SwaggerController {
     if(appInfo.nonEmpty){
       val info = new Info()
       if(appInfo.title.nonEmpty){ info.setTitle(appInfo.title) }
-      if(appInfo.version.nonEmpty){ info.setTitle(appInfo.version) }
-      if(appInfo.description.nonEmpty){ info.setTitle(appInfo.description) }
+      if(appInfo.version.nonEmpty){ info.setVersion(appInfo.version) }
+      if(appInfo.description.nonEmpty){ info.setDescription(appInfo.description) }
       swagger.setInfo(info)
     }
 
-    val pathMap = new mutable.HashMap[String, Path]()
+    val paths = new mutable.HashMap[String, Path]()
     val models = new mutable.HashMap[String, Model]()
+    val tags = new mutable.HashMap[String, Tag]()
 
-    Resty.allActions.filterNot(_.controller.isInstanceOf[SwaggerController]).foreach { action =>
-      val path = pathMap.getOrElseUpdate(action.path, new Path())
+    Resty.allActions.filterNot(_._1.instance.isInstanceOf[SwaggerController]).foreach { case (controller, action) =>
+      val tag = new Tag()
+      val tagName = if(controller.name.nonEmpty) controller.name else controller.instance.getClass.getSimpleName
+      tag.setName(tagName)
+      if(controller.description.nonEmpty){ tag.setDescription(controller.description) }
+      tags.put(tag.getName, tag)
+
+      val path = paths.getOrElseUpdate(action.path, new Path())
       val operation = new Operation()
       operation.setOperationId(action.function.getName)
+      operation.addTag(tagName)
 
       if(action.description.nonEmpty){
         operation.setDescription(action.description)
@@ -92,13 +100,9 @@ class SwaggerController {
       }
     }
 
-    pathMap.foreach { case (key, path) =>
-      swagger.path(key, path)
-    }
-
-    models.foreach { case (key, model) =>
-      swagger.addDefinition(key, model)
-    }
+    tags.foreach { case (key, tag) => swagger.addTag(tag) }
+    paths.foreach { case (key, path) => swagger.path(key, path) }
+    models.foreach { case (key, model) => swagger.addDefinition(key, model) }
 
     swagger
   }

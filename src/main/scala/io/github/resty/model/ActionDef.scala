@@ -8,7 +8,6 @@ case class ActionDef(
   description: String,
   deperecated: Boolean,
   params: Seq[ParamDef],
-  function: Method,
-  controller: AnyRef
+  function: Method
 )
 

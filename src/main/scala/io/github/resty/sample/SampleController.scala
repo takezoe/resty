@@ -22,6 +22,7 @@ class InitializeListener extends ServletContextListener {
 
 }
 
+@Controller(name = "sample", description = "Sample APIs")
 class SampleController {
 
   @Action(method = "GET", path = "/hello/{name}")
