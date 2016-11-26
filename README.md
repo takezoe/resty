@@ -42,8 +42,11 @@ $ curl -XGET http://localhost:8080/hello/resty
 
 Resty provides Swagger integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
 
+![Swagger integration](swagger.png)
+
 ## Hystrix integration
 
-Resty also provides Hystrix integration in default. Hystrix stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
+Resty also provides Hystrix integration in default. Metrics are published for each operations. The stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
 
+![Hystrix integration](hystrix.png)
 
