@@ -1,4 +1,4 @@
-package io.github.resty.model
+package io.github.takezoe.resty.model
 
 case class AppInfo(title: String = "", version: String = "", description: String = ""){
   val isEmpty = title.isEmpty && version.isEmpty && description.isEmpty

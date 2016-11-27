@@ -1,9 +1,9 @@
-package io.github.resty
+package io.github.takezoe.resty
 
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 
-import io.github.resty.model.{ActionDef, AppInfo, ControllerDef, ParamDef}
+import io.github.takezoe.resty.model.{ActionDef, AppInfo, ControllerDef, ParamDef}
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
@@ -30,7 +30,7 @@ object Resty {
     )
 
     controller.getClass.getMethods.foreach { method =>
-      val annotation = method.getAnnotation(classOf[io.github.resty.Action])
+      val annotation = method.getAnnotation(classOf[Action])
       if(annotation != null){
         val paramDefs = method.getParameters.map { param =>
           ParamDef(param.getName, param.getType)

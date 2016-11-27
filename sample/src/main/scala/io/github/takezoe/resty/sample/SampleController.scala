@@ -1,10 +1,10 @@
-package io.github.resty.sample
+package io.github.takezoe.resty.sample
 
 import javax.servlet.annotation.WebListener
 import javax.servlet.{ServletContextEvent, ServletContextListener}
 
-import io.github.resty._
-import io.github.resty.model.AppInfo
+import io.github.takezoe.resty._
+import io.github.takezoe.resty.model.AppInfo
 
 @WebListener
 class InitializeListener extends ServletContextListener {

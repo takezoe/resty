@@ -1,4 +1,4 @@
-package io.github.resty
+package io.github.takezoe.resty
 
 import java.lang.reflect.InvocationTargetException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
@@ -6,8 +6,8 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import com.netflix.hystrix.HystrixCommand.Setter
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey}
-import io.github.resty.model.{ActionDef, ControllerDef, ParamDef}
-import io.github.resty.util.JsonUtils
+import io.github.takezoe.resty.model.{ControllerDef, ParamDef}
+import io.github.takezoe.resty.util.JsonUtils
 import org.apache.commons.io.IOUtils
 
 trait RestyKernel {

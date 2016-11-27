@@ -1,4 +1,4 @@
-package io.github.resty.model
+package io.github.takezoe.resty.model
 
 import java.lang.reflect.Method
 

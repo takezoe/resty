@@ -1,6 +1,6 @@
-package io.github.resty.model
+package io.github.takezoe.resty.model
 
-import io.github.resty.util.JsonUtils
+import io.github.takezoe.resty.util.JsonUtils
 
 trait ParamConverter {
   def convert(value: String): Either[String, AnyRef]

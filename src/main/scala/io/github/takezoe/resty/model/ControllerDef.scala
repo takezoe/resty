@@ -1,4 +1,4 @@
-package io.github.resty.model
+package io.github.takezoe.resty.model
 
 case class ControllerDef (
   name: String,

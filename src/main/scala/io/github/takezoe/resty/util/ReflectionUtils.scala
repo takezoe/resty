@@ -1,6 +1,6 @@
-package io.github.resty.util
+package io.github.takezoe.resty.util
 
-import java.lang.reflect.{Field, Member}
+import java.lang.reflect.Field
 
 import org.json4s.scalap.scalasig._
 

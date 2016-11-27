@@ -1,4 +1,4 @@
-package io.github.resty;
+package io.github.takezoe.resty;
 
 import java.lang.annotation.*;
 

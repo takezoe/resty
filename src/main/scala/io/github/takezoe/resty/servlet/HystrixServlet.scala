@@ -1,4 +1,4 @@
-package io.github.resty.servlet
+package io.github.takezoe.resty.servlet
 
 import javax.servlet.annotation.WebServlet
 

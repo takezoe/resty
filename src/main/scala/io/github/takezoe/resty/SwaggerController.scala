@@ -1,9 +1,9 @@
-package io.github.resty
+package io.github.takezoe.resty
 
 import java.lang.reflect.Field
 
-import io.github.resty.model.ParamDef
-import io.github.resty.util.ReflectionUtils
+import io.github.takezoe.resty.model.ParamDef
+import io.github.takezoe.resty.util.ReflectionUtils
 import io.swagger.models._
 import io.swagger.models.parameters._
 import io.swagger.models.properties._

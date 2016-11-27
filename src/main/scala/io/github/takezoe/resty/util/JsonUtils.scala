@@ -1,4 +1,4 @@
-package io.github.resty.util
+package io.github.takezoe.resty.util
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind._

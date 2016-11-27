@@ -1,4 +1,4 @@
-package io.github.resty
+package io.github.takezoe.resty
 
 case class ErrorModel(errors: Seq[String])
 

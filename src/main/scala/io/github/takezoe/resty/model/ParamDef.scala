@@ -1,4 +1,4 @@
-package io.github.resty.model
+package io.github.takezoe.resty.model
 
 sealed trait ParamDef {
   val name: String

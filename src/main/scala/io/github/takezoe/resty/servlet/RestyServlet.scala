@@ -1,9 +1,9 @@
-package io.github.resty.servlet
+package io.github.takezoe.resty.servlet
 
 import javax.servlet.annotation.WebServlet
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
-import io.github.resty.RestyKernel
+import io.github.takezoe.resty.RestyKernel
 
 @WebServlet(name="RestyServlet", urlPatterns=Array("/*"))
 class RestyServlet extends HttpServlet with RestyKernel {
