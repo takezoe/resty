@@ -3,6 +3,14 @@ Resty
 
 Super easy REST API framework for Scala
 
+You can run the sample project by clone this repository and hit following command at the root directory:
+
+```
+sbt ~sample/jetty:start
+```
+
+Check APIs via Swagger UI at: `http://localhost:8080/swagger-ui/`.
+
 ##  Getting started
 
 This is a simplest controller example:
