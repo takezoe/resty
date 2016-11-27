@@ -1,6 +1,6 @@
 name := "resty"
 
-organization := "io.github.takezoe"
+organization := "com.github.takezoe"
 
 version := "0.0.1"
 
