@@ -1,5 +1,6 @@
 package com.github.takezoe.resty
 
+import java.io.InputStream
 import java.lang.reflect.InvocationTargetException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
@@ -101,6 +102,19 @@ trait RestyKernel {
           processResponse(response, body)
         }
       }
+      case x: Array[Byte] =>
+        response.setContentType("application/octet-stream")
+        val out = response.getOutputStream
+        out.write(x)
+        out.flush()
+      case x: InputStream =>
+        response.setContentType("application/octet-stream")
+        try {
+          val out = response.getOutputStream
+          IOUtils.copy(x, out)
+        } finally {
+          IOUtils.closeQuietly(x)
+        }
       case x: AnyRef => {
         response.setContentType("application/json")
         val writer = response.getWriter
