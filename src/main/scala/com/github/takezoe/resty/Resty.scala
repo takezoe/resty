@@ -47,8 +47,8 @@ object Resty {
     }
   }
 
-  def findAction(path: String, method: String): Option[(ControllerDef, ActionDef, Map[String, String])] = {
-    val pathParams = new mutable.HashMap[String, String]()
+  def findAction(path: String, method: String): Option[(ControllerDef, ActionDef, Map[String, Seq[String]])] = {
+    val pathParams = new mutable.HashMap[String, Seq[String]]()
 
     _actions.asScala.filter(_._2.method == method).find { case (controller, action) =>
       val requestPath = path.split("/")
@@ -56,7 +56,7 @@ object Resty {
       if(requestPath.length == actionPath.length){
         (requestPath zip actionPath).forall { case (requestPathFragment, actionPathFragment) =>
           if(actionPathFragment.startsWith("{") && actionPathFragment.endsWith("}")){
-            pathParams += (actionPathFragment.substring(1, actionPathFragment.length - 1) -> requestPathFragment)
+            pathParams += (actionPathFragment.substring(1, actionPathFragment.length - 1) -> Seq(requestPathFragment))
             true
           } else {
             requestPathFragment == actionPathFragment

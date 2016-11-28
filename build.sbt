@@ -2,9 +2,7 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.1"
-
-scalaVersion := "2.12.0"
+version := "0.0.2-SNAPSHOT"
 
 val jettyVersion = "9.2.3.v20140905"
 

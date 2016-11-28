@@ -2,6 +2,7 @@ package com.github.takezoe.resty
 
 import java.lang.reflect.Field
 
+import com.github.takezoe.resty.model.ParamConverter.{OptionStringConverter, SeqStringConverter}
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
 import io.swagger.models._
@@ -53,16 +54,35 @@ class SwaggerController {
 
       action.params.foreach { paramDef =>
         paramDef match {
-          case ParamDef.Param(name, _) if action.path.contains(s"{${name}}") => {
+          case ParamDef.Param(name, converter) if action.path.contains(s"{${name}}") => {
             val parameter = new PathParameter()
             parameter.setName(name)
-            parameter.setType("string") // TODO Int, Long and Option support
+            converter match {
+              // array type is not supported in path parameter
+              //case _: SeqStringConverter =>
+              //  parameter.setType("array")
+              //  parameter.setItems(new StringProperty())
+              case _: OptionStringConverter =>
+                parameter.setType("string")
+                parameter.setRequired(false)
+              case _ =>
+                parameter.setType("string")
+            }
             operation.addParameter(parameter)
           }
-          case ParamDef.Param(name, _) => {
+          case ParamDef.Param(name, converter) => {
             val parameter = new QueryParameter()
             parameter.setName(name)
-            parameter.setType("string") // TODO Int, Long and Option support
+            converter match {
+              case _: SeqStringConverter =>
+                parameter.setType("array")
+                parameter.setItems(new StringProperty())
+              case _: OptionStringConverter =>
+                parameter.setType("string")
+                parameter.setRequired(false)
+              case _ =>
+                parameter.setType("string")
+            }
             operation.addParameter(parameter)
           }
           case ParamDef.Body(name, clazz, _) => {

@@ -10,6 +10,8 @@ object ParamDef {
   def apply(name: String, clazz: Class[_]): ParamDef = {
     if(clazz == classOf[String]){
       Param(name, new ParamConverter.StringConverter(name))
+    } else if(clazz == classOf[Seq[_]]){
+      Param(name, new ParamConverter.SeqStringConverter(name))
     } else if(clazz == classOf[Option[_]]){
       Param(name, new ParamConverter.OptionStringConverter(name))
     } else {

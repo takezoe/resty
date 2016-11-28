@@ -66,11 +66,15 @@ trait RestyKernel {
     }
   }
 
-  protected def prepareParams(request: HttpServletRequest, pathParams: Map[String, String], paramDefs: Seq[ParamDef]): Either[Seq[String], Seq[AnyRef]] = {
+  protected def prepareParams(request: HttpServletRequest,
+                              pathParams: Map[String, Seq[String]],
+                              paramDefs: Seq[ParamDef]): Either[Seq[String], Seq[AnyRef]] = {
     val converted = paramDefs.map { paramDef =>
       paramDef match {
-        case ParamDef.Param(name, converter) => converter.convert(pathParams.get(name).getOrElse(request.getParameter(name)))
-        case ParamDef.Body(_, _, converter) => converter.convert(IOUtils.toString(request.getInputStream, "UTF-8"))
+        case ParamDef.Param(name, converter) =>
+          converter.convert(pathParams.get(name).getOrElse(request.getParameterValues(name)))
+        case ParamDef.Body(_, _, converter) =>
+          converter.convert(Seq(IOUtils.toString(request.getInputStream, "UTF-8")))
       }
     }
 

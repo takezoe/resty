@@ -26,8 +26,15 @@ class InitializeListener extends ServletContextListener {
 class SampleController {
 
   @Action(method = "GET", path = "/hello/{name}")
-  def hello(name: Option[String]): Message = {
-    Message(s"Hello ${name.getOrElse("World")}!")
+  def hello(name: String): Message = {
+    Message(s"Hello ${name}!")
+  }
+
+  @Action(method = "GET", path = "/hello")
+  def helloSeq(names: Seq[String]): Seq[String] = {
+    names.map { name =>
+      s"Hello ${name}!"
+    }
   }
 
   @Action(method = "POST", path = "/hello")
