@@ -33,7 +33,7 @@ lazy val root = (project in file("."))
     },
     pomIncludeRepository := { _ => false },
     pomExtra := (
-      <url>https://github.com/takezoe/scala-jdbc</url>
+      <url>https://github.com/takezoe/resty</url>
       <licenses>
         <license>
           <name>The Apache Software License, Version 2.0</name>
