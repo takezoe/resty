@@ -1,17 +1,43 @@
 package com.github.takezoe.resty.util
 
-import java.lang.reflect.Field
-
 import org.json4s.scalap.scalasig._
 
 object ReflectionUtils {
 
-  def getWrappedType[T](field: Field)(implicit m: Manifest[T]): Option[Class[_]] = {
+  def getWrappedTypeOfMethodArgument[T](method: java.lang.reflect.Method, index: Int)(implicit m: Manifest[T]): Option[Class[_]] = {
 
-    def findField(c: ClassSymbol, name: String): Option[MethodSymbol] =
-      (c.children collect { case m: MethodSymbol if m.name == name => m }).headOption
+    def findArgTypeForField(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
+      val t = s.infoType match {
+        case MethodType(TypeRefType(_, _, args), paramSymbols) => {
+          paramSymbols(typeArgIdx) match {
+            case sym: MethodSymbol => sym.infoType match {
+              case TypeRefType(_, _, args) => args(0)
+            }
+          }
+        }
+      }
 
-    def findArgTypeForField(s: MethodSymbol, typeArgIdx: Int): Class[_] = {
+      toClass(t match {
+        case TypeRefType(_, symbol, _)   => symbol
+        case x => throw new Exception("Unexpected type info " + x)
+      })
+    }
+
+    val scalaSigOption = ScalaSigParser.parse(method.getDeclaringClass())
+
+    scalaSigOption flatMap { scalaSig =>
+      val syms = scalaSig.topLevelClasses
+      val _type = syms.collectFirst {
+        case c if (c.path == method.getDeclaringClass().getName) =>
+          findMethodSymbol(c, method.getName).map { f => findArgTypeForField(c, f, index) }
+      }
+      _type.flatten
+    }
+  }
+
+  def getWrappedTypeOfField[T](field: java.lang.reflect.Field)(implicit m: Manifest[T]): Option[Class[_]] = {
+
+    def findArgTypeForField(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
       val t = s.infoType match {
         case NullaryMethodType(TypeRefType(_, _, args)) => args(typeArgIdx)
       }
@@ -22,32 +48,31 @@ object ReflectionUtils {
       })
     }
 
-    def toClass(s: Symbol) = s.path match {
-      case "scala.Short"         => classOf[Short]
-      case "scala.Int"           => classOf[Int]
-      case "scala.Long"          => classOf[Long]
-      case "scala.Boolean"       => classOf[Boolean]
-      case "scala.Float"         => classOf[Float]
-      case "scala.Double"        => classOf[Double]
-      case "scala.Byte"          => classOf[Byte]
-      case "scala.Predef.String" => classOf[String]
-      case x                     => Class.forName(x)
-    }
-
     val scalaSigOption = ScalaSigParser.parse(field.getDeclaringClass())
 
     scalaSigOption flatMap { scalaSig =>
       val syms = scalaSig.topLevelClasses
       val _type = syms.collectFirst {
         case c if (c.path == field.getDeclaringClass().getName) =>
-          field match {
-            case _: Field => findField(c, field.getName).map { f =>
-              findArgTypeForField(f, 0)
-            }
-          }
+          findMethodSymbol(c, field.getName).map { f => findArgTypeForField(c, f, 0) }
       }
       _type.flatten
     }
+  }
+
+  def findMethodSymbol(c: ClassSymbol, name: String): Option[MethodSymbol] =
+    (c.children collect { case m: MethodSymbol if m.name == name => m }).headOption
+
+  def toClass(s: Symbol) = s.path match {
+    case "scala.Short"         => classOf[Short]
+    case "scala.Int"           => classOf[Int]
+    case "scala.Long"          => classOf[Long]
+    case "scala.Boolean"       => classOf[Boolean]
+    case "scala.Float"         => classOf[Float]
+    case "scala.Double"        => classOf[Double]
+    case "scala.Byte"          => classOf[Byte]
+    case "scala.Predef.String" => classOf[String]
+    case x                     => Class.forName(x)
   }
 
 }

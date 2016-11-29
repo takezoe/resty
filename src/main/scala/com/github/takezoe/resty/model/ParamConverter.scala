@@ -3,7 +3,7 @@ package com.github.takezoe.resty.model
 import com.github.takezoe.resty.util.JsonUtils
 import io.swagger.models.RefModel
 import io.swagger.models.parameters.{BodyParameter, Parameter, SerializableParameter}
-import io.swagger.models.properties.{Property, StringProperty}
+import io.swagger.models.properties.{BooleanProperty, IntegerProperty, LongProperty, StringProperty}
 
 trait ParamConverter {
   def convert(values: Seq[String]): Either[String, AnyRef]
@@ -82,35 +82,43 @@ object ParamConverter {
     }
   }
 
-  class SeqStringConverter(name: String) extends ParamConverter {
+  class SeqStringConverter(name: String, converter: ParamConverter) extends ParamConverter {
     override def convert(values: Seq[String]): Either[String, AnyRef] = {
       if (values == null) {
         Right(Seq.empty)
       } else {
-        Right(values)
+        val converted: Seq[Either[String, AnyRef]] = values.map { x => converter.convert(Seq(x)) }
+        converted.find(_.isLeft).getOrElse(Right(converted.map(_.right.get)))
       }
     }
     override def parameter(model: Parameter): Parameter = {
       val param = model.asInstanceOf[SerializableParameter]
       param.setName(name)
       param.setType("array")
-      param.setItems(new StringProperty())
+      converter match {
+        case _: StringConverter  => param.setItems(new StringProperty())
+        case _: IntConverter     => param.setItems(new IntegerProperty())
+        case _: LongConverter    => param.setItems(new LongProperty())
+        case _: BooleanConverter => param.setItems(new BooleanProperty())
+      }
       param
     }
   }
 
-  class OptionStringConverter(name: String) extends ParamConverter {
+  class OptionStringConverter(name: String, converter: ParamConverter) extends ParamConverter {
     override def convert(values: Seq[String]): Either[String, AnyRef] = {
       if (values == null || values.isEmpty) {
         Right(None)
       } else {
-        Right(Some(values.head))
+        converter.convert(values) match {
+          case Right(x) => Right(Some(x))
+          case Left(x)  => Left(x)
+        }
       }
     }
     override def parameter(model: Parameter): Parameter = {
       val param = model.asInstanceOf[SerializableParameter]
-      param.setName(name)
-      param.setType("string")
+      converter.parameter(param)
       param.setRequired(false)
       param
     }

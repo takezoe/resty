@@ -32,8 +32,8 @@ object Resty {
     controller.getClass.getMethods.foreach { method =>
       val annotation = method.getAnnotation(classOf[Action])
       if(annotation != null){
-        val paramDefs = method.getParameters.map { param =>
-          ParamDef(param.getName, param.getType)
+        val paramDefs = method.getParameters.zipWithIndex.map { case (param, i) =>
+          ParamDef(param.getName, method, i, param.getType)
         }
         _actions.add((controllerDef, ActionDef(
           annotation.method().toLowerCase(),

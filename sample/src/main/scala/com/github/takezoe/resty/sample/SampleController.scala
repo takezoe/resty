@@ -31,7 +31,7 @@ class SampleController {
   }
 
   @Action(method = "GET", path = "/hello")
-  def helloSeq(names: Seq[String]): Seq[String] = {
+  def helloSeq(names: Seq[Int]): Seq[String] = {
     names.map { name =>
       s"Hello ${name}!"
     }

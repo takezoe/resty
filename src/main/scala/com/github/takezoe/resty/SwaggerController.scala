@@ -112,11 +112,11 @@ class SwaggerController {
 
     // TODO Map support?
     if(fieldType == classOf[Option[_]]){
-      ReflectionUtils.getWrappedType(field).flatMap { wrappedType =>
+      ReflectionUtils.getWrappedTypeOfField(field).flatMap { wrappedType =>
         createSimpleProperty(wrappedType, models)
       }
     } else if(fieldType == classOf[Seq[_]]){
-        ReflectionUtils.getWrappedType(field).map { wrappedType =>
+        ReflectionUtils.getWrappedTypeOfField(field).map { wrappedType =>
           val property = new ArrayProperty()
           createSimpleProperty(wrappedType, models).foreach { wrappedProperty =>
             property.setItems(wrappedProperty)
