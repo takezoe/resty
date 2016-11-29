@@ -54,45 +54,12 @@ class SwaggerController {
 
       action.params.foreach { paramDef =>
         paramDef match {
-          case ParamDef.Param(name, converter) if action.path.contains(s"{${name}}") => {
-            val parameter = new PathParameter()
-            parameter.setName(name)
-            converter match {
-              // array type is not supported in path parameter
-              //case _: SeqStringConverter =>
-              //  parameter.setType("array")
-              //  parameter.setItems(new StringProperty())
-              case _: OptionStringConverter =>
-                parameter.setType("string")
-                parameter.setRequired(false)
-              case _ =>
-                parameter.setType("string")
-            }
-            operation.addParameter(parameter)
-          }
-          case ParamDef.Param(name, converter) => {
-            val parameter = new QueryParameter()
-            parameter.setName(name)
-            converter match {
-              case _: SeqStringConverter =>
-                parameter.setType("array")
-                parameter.setItems(new StringProperty())
-              case _: OptionStringConverter =>
-                parameter.setType("string")
-                parameter.setRequired(false)
-              case _ =>
-                parameter.setType("string")
-            }
-            operation.addParameter(parameter)
-          }
-          case ParamDef.Body(name, clazz, _) => {
-            val parameter = new BodyParameter()
-            parameter.setSchema(new RefModel(clazz.getSimpleName))
-            parameter.setName(name)
-            parameter.setRequired(true)
-            models.put(clazz.getSimpleName, createModel(clazz, models))
-            operation.addParameter(parameter)
-          }
+          case ParamDef.Param(name, converter) if action.path.contains(s"{${name}}") =>
+            operation.addParameter(converter.parameter(new PathParameter()))
+          case ParamDef.Param(name, converter) =>
+            operation.addParameter(converter.parameter(new QueryParameter()))
+          case ParamDef.Body(name, clazz, converter) =>
+            operation.addParameter(converter.parameter(new BodyParameter()))
         }
       }
 

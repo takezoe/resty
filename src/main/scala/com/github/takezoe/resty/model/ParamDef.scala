@@ -8,14 +8,20 @@ sealed trait ParamDef {
 object ParamDef {
 
   def apply(name: String, clazz: Class[_]): ParamDef = {
-    if(clazz == classOf[String]){
+    if(clazz == classOf[String]) {
       Param(name, new ParamConverter.StringConverter(name))
+    } else if(clazz == classOf[Int]){
+      Param(name, new ParamConverter.IntConverter(name))
+    } else if(clazz == classOf[Long]){
+      Param(name, new ParamConverter.LongConverter(name))
+    } else if(clazz == classOf[Boolean]){
+      Param(name, new ParamConverter.BooleanConverter(name))
     } else if(clazz == classOf[Seq[_]]){
       Param(name, new ParamConverter.SeqStringConverter(name))
     } else if(clazz == classOf[Option[_]]){
       Param(name, new ParamConverter.OptionStringConverter(name))
     } else {
-      Body(name, clazz, new ParamConverter.JsonConverter(clazz))
+      Body(name, clazz, new ParamConverter.JsonConverter(name, clazz))
     }
   }
 
