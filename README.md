@@ -50,7 +50,7 @@ $ curl -XGET http://localhost:8080/hello/resty
 
 You can access Servlet API by mix-in `ServletAPI` trait into controller. `HttpServletRequest` is available as `request` and `HttpServletResponse` is available as `response`.
 
-```
+```scala
 class HelloController extends ServletAPI {
   @Action(method = "GET", path = "/hello")
   def hello(): Message = {
