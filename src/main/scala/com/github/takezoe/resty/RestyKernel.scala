@@ -98,6 +98,9 @@ trait RestyKernel {
       }
       case x: ActionResult => {
         response.setStatus(x.status)
+        x.headers.foreach { case (key, value) =>
+          response.addHeader(key, value)
+        }
         x.body.foreach { body =>
           processResponse(response, body)
         }

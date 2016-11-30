@@ -2,7 +2,11 @@ package com.github.takezoe.resty
 
 case class ErrorModel(errors: Seq[String])
 
-case class ActionResult(status: Int, body: Option[AnyRef])
+case class ActionResult(status: Int, body: Option[AnyRef], headers: Map[String, String] = Map.empty){
+  def withHeaders(headers: (String, String)*): ActionResult = {
+    copy(headers = headers.toMap)
+  }
+}
 
 object Ok {
   def apply() = ActionResult(200, None)
