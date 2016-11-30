@@ -95,7 +95,9 @@ trait RestyKernel {
   protected def processResponse(response: HttpServletResponse, result: AnyRef): Unit = {
     result match {
       case x: String => {
-        response.setContentType("text/plain; charset=UTF-8")
+        if(response.getContentType == null) {
+          response.setContentType("text/plain; charset=UTF-8")
+        }
         val writer = response.getWriter
         writer.println(x)
         writer.flush()
@@ -110,12 +112,16 @@ trait RestyKernel {
         }
       }
       case x: Array[Byte] =>
-        response.setContentType("application/octet-stream")
+        if(response.getContentType == null) {
+          response.setContentType("application/octet-stream")
+        }
         val out = response.getOutputStream
         out.write(x)
         out.flush()
       case x: InputStream =>
-        response.setContentType("application/octet-stream")
+        if(response.getContentType == null) {
+          response.setContentType("application/octet-stream")
+        }
         try {
           val out = response.getOutputStream
           IOUtils.copy(x, out)
@@ -124,7 +130,9 @@ trait RestyKernel {
           IOUtils.closeQuietly(x)
         }
       case x: File => {
-        response.setContentType("application/octet-stream")
+        if(response.getContentType == null) {
+          response.setContentType("application/octet-stream")
+        }
         val in = new FileInputStream(x)
         try {
           val out = response.getOutputStream
@@ -135,7 +143,9 @@ trait RestyKernel {
         }
       }
       case x: AnyRef => {
-        response.setContentType("application/json")
+        if(response.getContentType == null) {
+          response.setContentType("application/json")
+        }
         val writer = response.getWriter
         writer.println(JsonUtils.serialize(x))
         writer.flush()
