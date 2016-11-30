@@ -14,8 +14,14 @@ public @interface Action {
      */
     String method();
 
+    /**
+     * Optional
+     */
     String description() default "";
 
+    /**
+     * Optional (default is false)
+     */
     boolean deprecated() default false;
 
 }

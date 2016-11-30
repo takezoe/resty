@@ -6,6 +6,15 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Controller {
+
+    /**
+     *
+     */
     String name();
+
+    /**
+     * Optional
+     */
     String description() default "";
+
 }

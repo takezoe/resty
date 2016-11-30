@@ -7,6 +7,9 @@ import java.lang.annotation.*;
 @Documented
 public @interface Param {
 
+    /**
+     * Optional (default is a parameter name)
+     */
     String name() default "";
 
     /**
@@ -14,6 +17,9 @@ public @interface Param {
      */
     String from() default "";
 
+    /**
+     * Optional
+     */
     String description() default "";
 
 }
