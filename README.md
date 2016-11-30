@@ -11,7 +11,7 @@ sbt ~sample/jetty:start
 
 Check APIs via Swagger UI at: `http://localhost:8080/swagger-ui/`.
 
-##  Getting started
+## Getting started
 
 This is a simplest controller example:
 
@@ -44,6 +44,20 @@ Let's test this controller.
 ```
 $ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
+```
+
+## Servlet API
+
+You can access Servlet API by mix-in `ServletAPI` trait into controller. `HttpServletRequest` is available as `request` and `HttpServletResponse` is available as `response`.
+
+```
+class HelloController extends ServletAPI {
+  @Action(method = "GET", path = "/hello")
+  def hello(): Message = {
+    val name = request.getParameter("name")
+    Message(s"Hello ${name}!")
+  }
+}
 ```
 
 ## Swagger integration
