@@ -24,7 +24,6 @@ object ParamConverter {
       val param = model.asInstanceOf[SerializableParameter]
       param.setName(name)
       param.setType("string")
-      //param.setRequired(true)
       param
     }
   }
@@ -42,7 +41,6 @@ object ParamConverter {
       param.setName(name)
       param.setType("integer")
       param.setFormat("int32")
-      //param.setRequired(true)
       param
     }
   }
@@ -60,7 +58,6 @@ object ParamConverter {
       param.setName(name)
       param.setType("integer")
       param.setFormat("int64")
-      //param.setRequired(true)
       param
     }
   }
@@ -77,7 +74,6 @@ object ParamConverter {
       val param = model.asInstanceOf[SerializableParameter]
       param.setName(name)
       param.setType("boolean")
-      //param.setRequired(true)
       param
     }
   }

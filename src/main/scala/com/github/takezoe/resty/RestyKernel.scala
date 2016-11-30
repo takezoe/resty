@@ -1,6 +1,6 @@
 package com.github.takezoe.resty
 
-import java.io.InputStream
+import java.io.{File, FileInputStream, InputStream}
 import java.lang.reflect.InvocationTargetException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
@@ -112,9 +112,21 @@ trait RestyKernel {
         try {
           val out = response.getOutputStream
           IOUtils.copy(x, out)
+          out.flush()
         } finally {
           IOUtils.closeQuietly(x)
         }
+      case x: File => {
+        response.setContentType("application/octet-stream")
+        val in = new FileInputStream(x)
+        try {
+          val out = response.getOutputStream
+          IOUtils.copy(in, out)
+          out.flush()
+        } finally {
+          IOUtils.closeQuietly(in)
+        }
+      }
       case x: AnyRef => {
         response.setContentType("application/json")
         val writer = response.getWriter
