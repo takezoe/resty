@@ -54,12 +54,25 @@ class SwaggerController {
 
       action.params.foreach { paramDef =>
         paramDef match {
-          case ParamDef.Param(name, converter) if action.path.contains(s"{${name}}") =>
-            operation.addParameter(converter.parameter(new PathParameter()))
-          case ParamDef.Param(name, converter) =>
-            operation.addParameter(converter.parameter(new QueryParameter()))
-          case ParamDef.Body(name, clazz, converter) =>
-            operation.addParameter(converter.parameter(new BodyParameter()))
+          case ParamDef.PathParam(name, description, converter) =>
+            val parameter = new PathParameter()
+            if(description.nonEmpty){ parameter.setDescription(description) }
+            operation.addParameter(converter.parameter(parameter))
+
+          case ParamDef.QueryParam(name, description, converter) =>
+            val parameter = new QueryParameter()
+            if(description.nonEmpty){ parameter.setDescription(description) }
+            operation.addParameter(converter.parameter(parameter))
+
+          case ParamDef.HeaderParam(name, description, converter) =>
+            val parameter = new HeaderParameter()
+            if(description.nonEmpty){ parameter.setDescription(description) }
+            operation.addParameter(converter.parameter(parameter))
+
+          case ParamDef.BodyParam(name, description, clazz, converter) =>
+            val parameter = new BodyParameter()
+            if(description.nonEmpty){ parameter.setDescription(description) }
+            operation.addParameter(converter.parameter(parameter))
         }
       }
 

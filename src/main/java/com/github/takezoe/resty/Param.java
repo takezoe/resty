@@ -2,20 +2,18 @@ package com.github.takezoe.resty;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.METHOD})
+@Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Action {
+public @interface Param {
 
-    String path();
+    String name() default "";
 
     /**
-     * GET, POST, PUT or DELETE
+     * query, path, header or body
      */
-    String method();
+    String from() default "";
 
     String description() default "";
-
-    boolean deprecated() default false;
 
 }

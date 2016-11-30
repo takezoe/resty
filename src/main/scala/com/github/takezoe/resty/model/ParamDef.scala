@@ -6,23 +6,38 @@ import com.github.takezoe.resty.util.ReflectionUtils
 
 sealed trait ParamDef {
   val name: String
+  val description: String
   val converter: ParamConverter
 }
 
 object ParamDef {
 
-  def apply(name: String, method: Method, index: Int, clazz: Class[_]): ParamDef = {
-    simpleTypeConverter(name, clazz)
-      .map { converter => Param(name, converter) }
+  def apply(from: String, name: String, description: String, method: Method, index: Int, clazz: Class[_]): ParamDef = {
+    val converter = simpleTypeConverter(name, clazz)
       .getOrElse {
         if(clazz == classOf[Seq[_]]){
-          Param(name, new ParamConverter.SeqStringConverter(name, getWrappedTypeConverter(name, method, index)))
+          new ParamConverter.SeqStringConverter(name, getWrappedTypeConverter(name, method, index))
         } else if(clazz == classOf[Option[_]]){
-          Param(name, new ParamConverter.OptionStringConverter(name, getWrappedTypeConverter(name, method, index)))
+          new ParamConverter.OptionStringConverter(name, getWrappedTypeConverter(name, method, index))
         } else {
-          Body(name, clazz, new ParamConverter.JsonConverter(name, clazz))
+          new ParamConverter.JsonConverter(name, clazz)
         }
       }
+
+    from.toLowerCase() match {
+      case "query"  => QueryParam(name, description, converter)
+      case "path"   => PathParam(name, description, converter)
+      case "header" => HeaderParam(name, description, converter)
+      case "body"   => BodyParam(name, description, clazz, converter)
+    }
+  }
+
+  def isSimpleType(clazz: Class[_]): Boolean = {
+    clazz == classOf[String] || clazz == classOf[Int] || clazz == classOf[Long] || clazz == classOf[Boolean]
+  }
+
+  def isContainerType(clazz: Class[_]): Boolean = {
+    clazz == classOf[Option[_]] || clazz == classOf[Seq[_]]
   }
 
   protected def getWrappedTypeConverter(name: String, method: java.lang.reflect.Method, index: Int): ParamConverter = {
@@ -45,10 +60,10 @@ object ParamDef {
     }
   }
 
-  // TODO Path, query, form or header
-  case class Param(name: String, converter: ParamConverter) extends ParamDef
-
-  case class Body(name: String, clazz: Class[_], converter: ParamConverter) extends ParamDef
+  case class PathParam(name: String, description: String, converter: ParamConverter) extends ParamDef
+  case class QueryParam(name: String, description: String, converter: ParamConverter) extends ParamDef
+  case class HeaderParam(name: String, description: String, converter: ParamConverter) extends ParamDef
+  case class BodyParam(name: String, description: String, clazz: Class[_], converter: ParamConverter) extends ParamDef
 
 }
 

@@ -72,9 +72,13 @@ trait RestyKernel {
                               paramDefs: Seq[ParamDef]): Either[Seq[String], Seq[AnyRef]] = {
     val converted = paramDefs.map { paramDef =>
       paramDef match {
-        case ParamDef.Param(name, converter) =>
+        case ParamDef.PathParam(name, _, converter) =>
           converter.convert(pathParams.get(name).getOrElse(request.getParameterValues(name)))
-        case ParamDef.Body(_, _, converter) =>
+        case ParamDef.QueryParam(name, _, converter) =>
+          converter.convert(pathParams.get(name).getOrElse(request.getParameterValues(name)))
+        case ParamDef.HeaderParam(name, _, converter) =>
+          converter.convert(Seq(request.getHeader(name)))
+        case ParamDef.BodyParam(_, _, _, converter) =>
           converter.convert(Seq(IOUtils.toString(request.getInputStream, "UTF-8")))
       }
     }

@@ -33,7 +33,17 @@ object Resty {
       val annotation = method.getAnnotation(classOf[Action])
       if(annotation != null){
         val paramDefs = method.getParameters.zipWithIndex.map { case (param, i) =>
-          ParamDef(param.getName, method, i, param.getType)
+          method.getParameterAnnotations()(i).find(_.annotationType() == classOf[Param]).map { case x: Param =>
+            // @Param is specified
+            val paramName = if(x.name().nonEmpty) x.name else param.getName
+            val paramType = param.getType
+            ParamDef(paramFrom(x.from(), annotation.path(), paramName, paramType), paramName, x.description(), method, i, paramType)
+          }.getOrElse {
+            // @Param is not specified
+            val paramName = param.getName
+            val paramType = param.getType
+            ParamDef(paramFrom("", annotation.path(), paramName, paramType), paramName, "", method, i, paramType)
+          }
         }
         _actions.add((controllerDef, ActionDef(
           annotation.method().toLowerCase(),
@@ -43,6 +53,20 @@ object Resty {
           paramDefs,
           method
         )))
+      }
+    }
+  }
+
+  protected def paramFrom(from: String, path: String, name: String, clazz: Class[_]): String = {
+    if(from.nonEmpty) from else {
+      if(ParamDef.isSimpleType(clazz) || ParamDef.isContainerType(clazz)){
+        if(path.contains(s"{${name}}")) {
+          "path"
+        } else {
+          "query"
+        }
+      } else {
+        "body"
       }
     }
   }

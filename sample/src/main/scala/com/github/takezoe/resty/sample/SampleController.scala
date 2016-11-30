@@ -26,7 +26,9 @@ class InitializeListener extends ServletContextListener {
 class SampleController {
 
   @Action(method = "GET", path = "/hello/{name}")
-  def hello(name: String): Message = {
+  def hello(@Param(description = "Path parameter") name: String,
+            @Param(name="USER-AGENT", from="header", description = "Web browser information") userAgent: Option[String]): Message = {
+    println(userAgent)
     Message(s"Hello ${name}!")
   }
 
