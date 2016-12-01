@@ -3,6 +3,7 @@ package com.github.takezoe.resty
 import java.io.{File, InputStream}
 import java.lang.reflect.{Field, Method}
 
+import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
 import io.swagger.models._
@@ -73,6 +74,9 @@ class SwaggerController {
             val parameter = new BodyParameter()
             if(description.nonEmpty){ parameter.setDescription(description) }
             operation.addParameter(converter.parameter(parameter))
+            if(converter.isInstanceOf[JsonConverter]){
+              models.put(clazz.getSimpleName, createModel(clazz, models))
+            }
         }
       }
 
@@ -112,9 +116,14 @@ class SwaggerController {
     val model = new ModelImpl()
     model.setName(clazz.getSimpleName)
 
+    println(clazz)
+
     clazz.getDeclaredFields.foreach { field =>
-      createProperty(field, models).foreach { property =>
-        model.addProperty(field.getName, property)
+      println("field: " + field.getName)
+      if(field.getName != "$outer"){
+        createProperty(field, models).foreach { property =>
+          model.addProperty(field.getName, property)
+        }
       }
     }
 

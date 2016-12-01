@@ -1,32 +1,53 @@
 package com.github.takezoe.resty.util
 
+import java.lang.reflect.Member
+
 import org.json4s.scalap.scalasig._
+
+import scala.annotation.tailrec
 
 object ReflectionUtils {
 
   def getWrappedTypeOfMethod[T](method: java.lang.reflect.Method)(implicit m: Manifest[T]): Option[Class[_]] = {
 
     def findArgType(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
-      println(s.infoType)
       val t = s.infoType match {
         case MethodType(TypeRefType(_, _, args), _) => args(0)
       }
-
       toClass(t match {
         case TypeRefType(_, symbol, _)   => symbol
         case x => throw new Exception("Unexpected type info " + x)
       })
     }
 
-    val scalaSigOption = ScalaSigParser.parse(method.getDeclaringClass())
-
-    scalaSigOption flatMap { scalaSig =>
-      val syms = scalaSig.topLevelClasses
+    ScalaSigParser.parse(getTopLevelClass(method)).flatMap { scalaSig =>
+      val syms = scalaSig.topLevelClasses.flatMap(getAllClassSymbols)
       val _type = syms.collectFirst {
-        case c if (c.path == method.getDeclaringClass().getName) =>
+        case c if (c.path == method.getDeclaringClass().getName.replace('$', '.')) =>
           findMethodSymbol(c, method.getName).map { f => findArgType(c, f, 0) }
       }
       _type.flatten
+    }
+  }
+
+  protected def getAllClassSymbols(sym: ClassSymbol): Seq[ClassSymbol] = {
+    sym.children.collect { case c: ClassSymbol =>
+      getAllClassSymbols(c)
+    }.flatten :+ sym
+  }
+
+  protected def getTopLevelClass(member: Member): Class[_] = {
+    member.getDeclaringClass match {
+      case c if c.getName.contains("$") => getTopLevelClass(c)
+      case c => c
+    }
+  }
+
+  @tailrec
+  protected def getTopLevelClass(clazz: Class[_]): Class[_] = {
+    clazz.getDeclaringClass match {
+      case c if c.getName.contains("$") => getTopLevelClass(c)
+      case c => c
     }
   }
 
@@ -43,17 +64,14 @@ object ReflectionUtils {
           }
         }
       }
-
       toClass(t match {
         case TypeRefType(_, symbol, _)   => symbol
         case x => throw new Exception("Unexpected type info " + x)
       })
     }
 
-    val scalaSigOption = ScalaSigParser.parse(method.getDeclaringClass())
-
-    scalaSigOption flatMap { scalaSig =>
-      val syms = scalaSig.topLevelClasses
+    ScalaSigParser.parse(getTopLevelClass(method)).flatMap { scalaSig =>
+      val syms = scalaSig.topLevelClasses.flatMap(getAllClassSymbols)
       val _type = syms.collectFirst {
         case c if (c.path == method.getDeclaringClass().getName) =>
           findMethodSymbol(c, method.getName).map { f => findArgType(c, f, index) }
@@ -68,17 +86,14 @@ object ReflectionUtils {
       val t = s.infoType match {
         case NullaryMethodType(TypeRefType(_, _, args)) => args(typeArgIdx)
       }
-
       toClass(t match {
         case TypeRefType(_, symbol, _)   => symbol
         case x => throw new Exception("Unexpected type info " + x)
       })
     }
 
-    val scalaSigOption = ScalaSigParser.parse(field.getDeclaringClass())
-
-    scalaSigOption flatMap { scalaSig =>
-      val syms = scalaSig.topLevelClasses
+    ScalaSigParser.parse(getTopLevelClass(field)).flatMap { scalaSig =>
+      val syms = scalaSig.topLevelClasses.flatMap(getAllClassSymbols)
       val _type = syms.collectFirst {
         case c if (c.path == field.getDeclaringClass().getName) =>
           findMethodSymbol(c, field.getName).map { f => findArgType(c, f, 0) }
