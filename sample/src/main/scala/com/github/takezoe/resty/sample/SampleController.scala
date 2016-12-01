@@ -44,6 +44,16 @@ class SampleController {
     Message(s"Hello ${in.name.getOrElse("World")}!")
   }
 
+  @Action(method = "GET", path = "/download")
+  def download(): Array[Byte] = {
+    "test".getBytes("UTF-8")
+  }
+
+  @Action(method = "GET", path = "/text")
+  def text(): String = {
+    "test"
+  }
+
   @Action(method = "GET", path = "/error", description="This operation always throws exception.", deprecated = true)
   @deprecated
   def error(): Unit = {

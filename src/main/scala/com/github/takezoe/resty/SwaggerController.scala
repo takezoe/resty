@@ -1,8 +1,8 @@
 package com.github.takezoe.resty
 
+import java.io.{File, InputStream}
 import java.lang.reflect.Field
 
-import com.github.takezoe.resty.model.ParamConverter.{OptionStringConverter, SeqStringConverter}
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
 import io.swagger.models._
@@ -85,11 +85,12 @@ class SwaggerController {
       }
 
       {
-        val returnType = classOf[ErrorModel]
+        val returnType = classOf[MessageModel]
         val response = new Response()
         response.setSchema(new RefProperty(returnType.getSimpleName))
         models.put(returnType.getSimpleName, createModel(returnType, models))
         operation.addResponse("default", response)
+        operation.produces("application/json")
       }
 
       action.method match {
@@ -149,8 +150,10 @@ class SwaggerController {
       Some(new StringProperty())
     } else if(clazz == classOf[Int]){
       Some(new IntegerProperty())
-    } else if(clazz == classOf[Long]){
+    } else if(clazz == classOf[Long]) {
       Some(new LongProperty())
+    } else if(clazz == classOf[File] || clazz == classOf[Array[Byte]] || clazz == classOf[InputStream]){
+      Some(new FileProperty())
     } else if(clazz == classOf[Unit]){
       None
     } else {
