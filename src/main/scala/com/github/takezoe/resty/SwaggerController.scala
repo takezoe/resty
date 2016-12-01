@@ -1,7 +1,7 @@
 package com.github.takezoe.resty
 
 import java.io.{File, InputStream}
-import java.lang.reflect.Field
+import java.lang.reflect.{Field, Method}
 
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
@@ -78,14 +78,14 @@ class SwaggerController {
 
       {
         val response = new Response()
-        createSimpleProperty(action.function.getReturnType, models).map { property =>
+        createProperty(action.function, models).map { property =>
           response.setSchema(property)
         }
         operation.addResponse("200", response)
       }
 
       {
-        val returnType = classOf[MessageModel]
+        val returnType = classOf[ErrorModel]
         val response = new Response()
         response.setSchema(new RefProperty(returnType.getSimpleName))
         models.put(returnType.getSimpleName, createModel(returnType, models))
@@ -119,6 +119,30 @@ class SwaggerController {
     }
 
     model
+  }
+
+  protected def createProperty(method: Method, models: mutable.HashMap[String, Model]): Option[Property] = {
+    val fieldType = method.getReturnType
+
+    // TODO Map support?
+    if(fieldType == classOf[Option[_]]){
+      ReflectionUtils.getWrappedTypeOfMethod(method).flatMap { wrappedType =>
+        createSimpleProperty(wrappedType, models)
+      }
+    } else if(fieldType == classOf[Seq[_]]){
+      ReflectionUtils.getWrappedTypeOfMethod(method).map { wrappedType =>
+        val property = new ArrayProperty()
+        createSimpleProperty(wrappedType, models).foreach { wrappedProperty =>
+          property.setItems(wrappedProperty)
+        }
+        property
+      }
+    } else {
+      createSimpleProperty(fieldType, models).map { property =>
+        property.setRequired(true)
+        property
+      }
+    }
   }
 
   protected def createProperty(field: Field, models: mutable.HashMap[String, Model]): Option[Property] = {

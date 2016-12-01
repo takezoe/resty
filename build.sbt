@@ -17,7 +17,8 @@ lazy val root = (project in file("."))
       "com.fasterxml.jackson.module" %% "jackson-module-scala"         % "2.8.4",
       "io.swagger"                   % "swagger-models"                % "1.5.10",
       "commons-io"                   % "commons-io"                    % "2.5",
-      "javax.servlet"                %  "javax.servlet-api"            % "3.0.1" % "provided"
+      "javax.servlet"                %  "javax.servlet-api"            % "3.0.1" % "provided",
+      "org.scalatest"                %% "scalatest"                    % "3.0.1" % "test"
     ),
     scalacOptions := Seq("-deprecation"),
     publishMavenStyle := true,

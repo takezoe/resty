@@ -4,9 +4,36 @@ import org.json4s.scalap.scalasig._
 
 object ReflectionUtils {
 
+  def getWrappedTypeOfMethod[T](method: java.lang.reflect.Method)(implicit m: Manifest[T]): Option[Class[_]] = {
+
+    def findArgType(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
+      println(s.infoType)
+      val t = s.infoType match {
+        case MethodType(TypeRefType(_, _, args), _) => args(0)
+      }
+
+      toClass(t match {
+        case TypeRefType(_, symbol, _)   => symbol
+        case x => throw new Exception("Unexpected type info " + x)
+      })
+    }
+
+    val scalaSigOption = ScalaSigParser.parse(method.getDeclaringClass())
+
+    scalaSigOption flatMap { scalaSig =>
+      val syms = scalaSig.topLevelClasses
+      val _type = syms.collectFirst {
+        case c if (c.path == method.getDeclaringClass().getName) =>
+          findMethodSymbol(c, method.getName).map { f => findArgType(c, f, 0) }
+      }
+      _type.flatten
+    }
+  }
+
+
   def getWrappedTypeOfMethodArgument[T](method: java.lang.reflect.Method, index: Int)(implicit m: Manifest[T]): Option[Class[_]] = {
 
-    def findArgTypeForField(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
+    def findArgType(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
       val t = s.infoType match {
         case MethodType(TypeRefType(_, _, args), paramSymbols) => {
           paramSymbols(typeArgIdx) match {
@@ -29,7 +56,7 @@ object ReflectionUtils {
       val syms = scalaSig.topLevelClasses
       val _type = syms.collectFirst {
         case c if (c.path == method.getDeclaringClass().getName) =>
-          findMethodSymbol(c, method.getName).map { f => findArgTypeForField(c, f, index) }
+          findMethodSymbol(c, method.getName).map { f => findArgType(c, f, index) }
       }
       _type.flatten
     }
@@ -37,7 +64,7 @@ object ReflectionUtils {
 
   def getWrappedTypeOfField[T](field: java.lang.reflect.Field)(implicit m: Manifest[T]): Option[Class[_]] = {
 
-    def findArgTypeForField(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
+    def findArgType(c: ClassSymbol, s: MethodSymbol, typeArgIdx: Int): Class[_] = {
       val t = s.infoType match {
         case NullaryMethodType(TypeRefType(_, _, args)) => args(typeArgIdx)
       }
@@ -54,7 +81,7 @@ object ReflectionUtils {
       val syms = scalaSig.topLevelClasses
       val _type = syms.collectFirst {
         case c if (c.path == field.getDeclaringClass().getName) =>
-          findMethodSymbol(c, field.getName).map { f => findArgTypeForField(c, f, 0) }
+          findMethodSymbol(c, field.getName).map { f => findArgType(c, f, 0) }
       }
       _type.flatten
     }
