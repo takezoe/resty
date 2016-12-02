@@ -1,5 +1,3 @@
-import com.typesafe.sbt.SbtPgp
-
 name := "resty"
 
 organization := "com.github.takezoe"
