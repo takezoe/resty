@@ -1,13 +1,14 @@
+import com.typesafe.sbt.SbtPgp
+
 name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.2"
+version := "0.0.3-SNAPSHOT"
 
 val jettyVersion = "9.2.3.v20140905"
 
 lazy val root = (project in file("."))
-  .enablePlugins(JettyPlugin)
   .settings(
     scalaVersion := "2.12.0",
     libraryDependencies ++= Seq(
@@ -70,5 +71,6 @@ lazy val sample = (project in file("sample"))
       "-Xdebug",
       "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000"
     ),
-    publishArtifact := false
+    PgpKeys.publishSigned := (),
+    PgpKeys.publishLocalSigned := ()
   ).dependsOn(root)
