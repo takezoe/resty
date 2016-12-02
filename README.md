@@ -16,6 +16,8 @@ Check APIs via Swagger UI at: `http://localhost:8080/swagger-ui/`.
 This is a simplest controller example:
 
 ```scala
+import com.github.takezoe.resty._
+
 class HelloController {
   @Action(method = "GET", path = "/hello/{name}")
   def hello(name: String): Message = {
@@ -44,6 +46,69 @@ Let's test this controller.
 ```
 $ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
+```
+
+## More annotations
+
+Resty provides some annotations including `@Action`.
+
+### @Controller
+
+You can add `@Controller` to the controller class to define the controller name and description. They are applied to Swagger JSON.
+
+|parameter   |required |description                   |
+|------------|---------|------------------------------|
+|name        |optional |name of the controller        |
+|description |optional |description of the controller |
+
+```scala
+@Controller(name = "hello", description = "HelloWorld API")
+class HelloController {
+  ...
+}
+```
+
+### @Action
+
+We already looked `@Action` to annotate the action method. It has some more parameters to add more information about the action.
+
+|parameter   |required |description                                          |
+|------------|---------|-----------------------------------------------------|
+|method      |required |GET, POST, PUT or DELETE                             |
+|path        |required |path of the action (`{name}` defines path parameter) |
+|description |optional |description of the method                            |
+|deprecated  |optional |if true then deprecated (default is false)           |
+
+```scala
+class HelloController {
+  @Action(method = "GET", path = "/v1/hello", 
+    description = "Old version of HelloWorld API", deprecated = true)
+  def hello() = {
+    ...
+  }
+}
+```
+
+### @Param
+
+`@Param` is added to the arguments of the action method to define advanced parameter binding.
+
+|parameter   |required |description                                          |
+|------------|---------|-----------------------------------------------------|
+|from        |optional |query, path, header or body                          |
+|name        |optional |parameter or header name (default is arg name)       |
+|description |optional |description of the parameter                         |
+
+```scala
+class HelloController {
+  @Action(method = "GET", path = "/hello")
+  def hello(
+    @Param(from = "query", name = "user-name") userName: String,
+    @Param(from = "header", name = "User-Agent") userAgent: String
+  ) = {
+    ...
+  }
+}
 ```
 
 ## Servlet API
