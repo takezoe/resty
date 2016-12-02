@@ -4,17 +4,22 @@ import java.lang.reflect.{Field, Method}
 
 import org.scalatest._
 
-case class ReflectionUtilsTest1(optionField: Option[String], seqField: Seq[String]) {
+case class ReflectionUtilsTest1(optionField: Option[String], seqField: Seq[String], nestField: Option[ReflectionUtilsNestTest1]) {
   def optionMethod(): Option[String] = None
   def seqMethod(): Seq[String] = Nil
+  def nestMethod(): Option[ReflectionUtilsNestTest1] = None
 }
+
+case class ReflectionUtilsNestTest1(field: String)
 
 class ReflectionUtilsSpec extends FunSuite {
 
-  case class ReflectionUtilsTest2(optionField: Option[String], seqField: Seq[String]) {
+  case class ReflectionUtilsTest2(optionField: Option[String], seqField: Seq[String], nestField: Option[ReflectionUtilsNestTest2]) {
     def optionMethod(): Option[String] = None
     def seqMethod(): Seq[String] = Nil
+    def nestMethod(): Option[ReflectionUtilsNestTest2] = None
   }
+  case class ReflectionUtilsNestTest2(field: String)
 
   test("Get generic type of method return type"){
     val clazz = classOf[ReflectionUtilsTest1]
@@ -31,6 +36,13 @@ class ReflectionUtilsSpec extends FunSuite {
       val result = ReflectionUtils.getWrappedTypeOfMethod(method)
 
       assert(result == Some(classOf[String]))
+    }
+
+    {
+      val method = getMethod(clazz, "nestMethod")
+      val result = ReflectionUtils.getWrappedTypeOfMethod(method)
+
+      assert(result == Some(classOf[ReflectionUtilsNestTest1]))
     }
   }
 
@@ -50,6 +62,13 @@ class ReflectionUtilsSpec extends FunSuite {
 
       assert(result == Some(classOf[String]))
     }
+
+    {
+      val field = getField(clazz, "nestField")
+      val result = ReflectionUtils.getWrappedTypeOfField(field)
+
+      assert(result == Some(classOf[ReflectionUtilsNestTest1]))
+    }
   }
 
   test("Get generic type of method type of inner class"){
@@ -68,6 +87,13 @@ class ReflectionUtilsSpec extends FunSuite {
 
       assert(result == Some(classOf[String]))
     }
+
+    {
+      val method = getMethod(clazz, "nestMethod")
+      val result = ReflectionUtils.getWrappedTypeOfMethod(method)
+
+      assert(result == Some(classOf[ReflectionUtilsNestTest2]))
+    }
   }
 
   test("Get generic type of field type of inner class"){
@@ -85,6 +111,13 @@ class ReflectionUtilsSpec extends FunSuite {
       val result = ReflectionUtils.getWrappedTypeOfField(field)
 
       assert(result == Some(classOf[String]))
+    }
+
+    {
+      val field = getField(clazz, "nestField")
+      val result = ReflectionUtils.getWrappedTypeOfField(field)
+
+      assert(result == Some(classOf[ReflectionUtilsNestTest2]))
     }
   }
 

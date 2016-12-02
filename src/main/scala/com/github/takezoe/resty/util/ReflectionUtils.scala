@@ -113,7 +113,7 @@ object ReflectionUtils {
     case "scala.Double"        => classOf[Double]
     case "scala.Byte"          => classOf[Byte]
     case "scala.Predef.String" => classOf[String]
-    case x                     => Class.forName(x)
+    case x => Class.forName(if(s.parent.exists(_.isInstanceOf[ClassSymbol])) x.replaceFirst("\\.([^.]+?)$", "\\$$1") else x)
   }
 
 }

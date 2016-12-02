@@ -116,10 +116,7 @@ class SwaggerController {
     val model = new ModelImpl()
     model.setName(clazz.getSimpleName)
 
-    println(clazz)
-
     clazz.getDeclaredFields.foreach { field =>
-      println("field: " + field.getName)
       if(field.getName != "$outer"){
         createProperty(field, models).foreach { property =>
           model.addProperty(field.getName, property)
