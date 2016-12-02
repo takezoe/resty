@@ -3,7 +3,7 @@ Resty
 
 Super easy REST API framework for Scala
 
-You can run the sample project by hitting following command:
+You can run the sample project by hitting following commands:
 
 ```
 $ git clone https://github.com/takezoe/resty-sample.git
