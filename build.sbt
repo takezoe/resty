@@ -2,7 +2,7 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.2-SNAPSHOT"
+version := "0.0.2"
 
 val jettyVersion = "9.2.3.v20140905"
 
@@ -69,5 +69,6 @@ lazy val sample = (project in file("sample"))
     javaOptions in Jetty ++= Seq(
       "-Xdebug",
       "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000"
-    )
+    ),
+    publishArtifact := false
   ).dependsOn(root)
