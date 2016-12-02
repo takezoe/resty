@@ -48,7 +48,7 @@ $ curl -XGET http://localhost:8080/hello/resty
 {"message": "Hello resty!" }
 ```
 
-## More annotations
+## Annotations
 
 Resty provides some annotations including `@Action`.
 
@@ -110,6 +110,25 @@ class HelloController {
   }
 }
 ```
+
+## Types
+
+Resty supports following type as the parameter argument:
+
+- `String`
+- `Int`
+- `Long`
+- `Boolean`
+- `Option[T]`
+- `Seq[T]`
+- `AnyRef` (for JSON in the request body)
+
+Also following types are supported as the return value of the action method:
+
+- `String` is responded as `text/plain; charset=UTF-8`
+- `Array[Byte]`, `InputStream`, `java.io.File` are responded as `application/octet-stream`
+- `AnyRef` is responded as `application/json`
+- `ActionResult` is responded as specified status, headers and body
 
 ## Servlet API
 
