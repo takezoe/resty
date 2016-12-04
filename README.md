@@ -1,4 +1,4 @@
-Resty
+Resty [![Build Status](https://travis-ci.org/takezoe/resty.svg?branch=master)](https://travis-ci.org/takezoe/resty)
 ========
 
 Super easy REST API framework for Scala
