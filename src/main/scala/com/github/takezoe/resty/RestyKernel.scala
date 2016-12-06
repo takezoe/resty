@@ -4,8 +4,6 @@ import java.io.{File, FileInputStream, InputStream}
 import java.lang.reflect.InvocationTargetException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import com.github.kristofa.brave.IdConversion._
-import com.github.kristofa.brave.SpanId
 import com.github.takezoe.resty.model.{ControllerDef, ParamDef}
 import com.github.takezoe.resty.util.JsonUtils
 import com.netflix.hystrix.HystrixCommand.Setter
@@ -15,15 +13,6 @@ import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixComma
 import org.apache.commons.io.IOUtils
 
 trait RestyKernel {
-
-  protected def getSpanId(traceId: String, spanId: String, parentSpanId: String, sampled: Option[Boolean]): SpanId = {
-    SpanId.builder
-      .traceIdHigh(if (traceId.length == 32) convertToLong(traceId, 0) else 0)
-      .traceId(convertToLong(traceId))
-      .spanId(convertToLong(spanId))
-      .sampled(sampled.map(x => new java.lang.Boolean(x)).orNull)
-      .parentId(if(parentSpanId == null) null else convertToLong(parentSpanId)).build
-  }
 
   protected def processAction(request: HttpServletRequest, response: HttpServletResponse, method: String): Unit = {
     Resty.findAction(request.getRequestURI, method) match {
