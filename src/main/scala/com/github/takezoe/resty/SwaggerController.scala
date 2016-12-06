@@ -182,6 +182,10 @@ class SwaggerController {
       Some(new IntegerProperty())
     } else if(clazz == classOf[Long]) {
       Some(new LongProperty())
+    } else if(clazz == classOf[Double]) {
+      Some(new DoubleProperty())
+    } else if(clazz == classOf[Boolean]) {
+      Some(new BooleanProperty())
     } else if(clazz == classOf[File] || clazz == classOf[Array[Byte]] || clazz == classOf[InputStream]){
       Some(new FileProperty())
     } else if(clazz == classOf[Unit]){
