@@ -7,8 +7,9 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import com.github.takezoe.resty.model.{ControllerDef, ParamDef}
 import com.github.takezoe.resty.util.JsonUtils
 import com.netflix.hystrix.HystrixCommand.Setter
+import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
 import com.netflix.hystrix.exception.HystrixRuntimeException
-import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey}
+import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey, HystrixCommandProperties}
 import org.apache.commons.io.IOUtils
 
 trait RestyKernel {
@@ -157,6 +158,10 @@ trait RestyKernel {
     Setter
       .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
       .andCommandKey(HystrixCommandKey.Factory.asKey(key))
+      .andCommandPropertiesDefaults(
+        HystrixCommandProperties.Setter()
+          .withExecutionIsolationStrategy(ExecutionIsolationStrategy.SEMAPHORE)
+          .withExecutionIsolationSemaphoreMaxConcurrentRequests(1000))
   ) {
     override def run(): Unit = f
   }
