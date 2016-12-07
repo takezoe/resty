@@ -12,7 +12,7 @@ object Resty {
 
   private val _appInfo = new AtomicReference[AppInfo](AppInfo())
   private val _actions = new CopyOnWriteArrayList[(ControllerDef, ActionDef)]()
-  register(new SwaggerController())
+  //register(new SwaggerController())
 
   def register(appInfo: AppInfo): Unit = {
     _appInfo.set(appInfo)

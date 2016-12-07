@@ -2,9 +2,12 @@ package com.github.takezoe.resty
 
 import java.io.{File, FileInputStream, InputStream}
 import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.servlet.ServletContextEvent
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import com.github.takezoe.resty.model.{ControllerDef, ParamDef}
+import com.github.takezoe.resty.model.{ActionDef, ControllerDef, ParamDef}
+import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.JsonUtils
 import com.netflix.hystrix.HystrixCommand.Setter
 import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
@@ -18,33 +21,45 @@ trait RestyKernel {
     Resty.findAction(request.getRequestURI, method) match {
       case Some((controller, action, pathParams)) => {
         try {
-          new RestyActionCommand(action.method + " " + action.path,
-            try {
-              setServletAPI(controller, request, response)
-              prepareParams(request, pathParams, action.params) match {
-                case Left(errors) =>
-                  processResponse(response, BadRequest(ErrorModel(errors)))
-                case Right(params) =>
-                  val result = action.function.invoke(controller.instance, params: _*)
-                  processResponse(response, result)
-              }
-            } finally {
-              removeServletAPI(controller)
-            }
-          ).execute()
+          if(HystrixSupport.isEnabled) {
+            new HystrixSupport.RestyActionCommand(action.method + " " + action.path,
+              invokeAction(controller, action, pathParams, request, response)
+            ).execute()
+          } else {
+            invokeAction(controller, action, pathParams, request, response)
+          }
         } catch {
-          case e: HystrixRuntimeException => {
+          case e: HystrixRuntimeException =>
             val cause = e.getCause match {
               case e: InvocationTargetException => e.getCause
               case e => e
             }
             processResponse(response, InternalServerError(ErrorModel(Seq(cause.toString))))
-          }
+          case e: InvocationTargetException =>
+            processResponse(response, InternalServerError(ErrorModel(Seq(e.getCause.toString))))
+          case e: Exception =>
+            processResponse(response, InternalServerError(ErrorModel(Seq(e.toString))))
         }
       }
       case None => {
         processResponse(response, NotFound())
       }
+    }
+  }
+
+  protected def invokeAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
+                             request: HttpServletRequest, response: HttpServletResponse): Unit = {
+    try {
+      setServletAPI(controller, request, response)
+      prepareParams(request, pathParams, action.params) match {
+        case Left(errors) =>
+          processResponse(response, BadRequest(ErrorModel(errors)))
+        case Right(params) =>
+          val result = action.function.invoke(controller.instance, params: _*)
+          processResponse(response, result)
+      }
+    } finally {
+      removeServletAPI(controller)
     }
   }
 
@@ -154,7 +169,15 @@ trait RestyKernel {
     }
   }
 
-  private class RestyActionCommand(key: String, f: => Unit) extends HystrixCommand[Unit](
+
+}
+
+
+object HystrixSupport {
+
+  private val enable = new AtomicBoolean(false)
+
+  class RestyActionCommand(key: String, f: => Unit) extends HystrixCommand[Unit](
     Setter
       .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
       .andCommandKey(HystrixCommandKey.Factory.asKey(key))
@@ -165,5 +188,16 @@ trait RestyKernel {
   ) {
     override def run(): Unit = f
   }
+
+  def initialize(sce: ServletContextEvent): Unit = {
+    if("enable" == sce.getServletContext.getInitParameter(ConfigKeys.HystrixSupport)){
+      enable.set(true)
+    }
+  }
+
+  def shutdown(sce: ServletContextEvent): Unit = {
+  }
+
+  def isEnabled = enable.get()
 
 }

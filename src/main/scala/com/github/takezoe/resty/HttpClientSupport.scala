@@ -5,6 +5,7 @@ import javax.servlet.ServletContextEvent
 
 import com.github.kristofa.brave.Brave
 import com.github.kristofa.brave.httpclient.{BraveHttpRequestInterceptor, BraveHttpResponseInterceptor}
+import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.JsonUtils
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.entity.EntityBuilder
@@ -42,7 +43,7 @@ object ZipkinSupport {
       throw new IllegalArgumentException("ZipkinSupport has been already initialized.")
     }
     val name = sce.getServletContext.getServletContextName
-    val url = sce.getServletContext.getInitParameter("resty.zipkin.server.url")
+    val url = sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl)
 
     if(url == null || url.trim.isEmpty){
       _brave.set(new Brave.Builder(name).build())
