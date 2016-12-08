@@ -135,13 +135,17 @@ class SwaggerController {
       ReflectionUtils.getWrappedTypeOfMethod(method).flatMap { wrappedType =>
         createSimpleProperty(wrappedType, models)
       }
-    } else if(fieldType == classOf[Seq[_]]){
+    } else if(fieldType == classOf[Seq[_]]) {
       ReflectionUtils.getWrappedTypeOfMethod(method).map { wrappedType =>
         val property = new ArrayProperty()
         createSimpleProperty(wrappedType, models).foreach { wrappedProperty =>
           property.setItems(wrappedProperty)
         }
         property
+      }
+    } else if(fieldType == classOf[ActionResult[_]]){
+      ReflectionUtils.getWrappedTypeOfMethod(method).flatMap { wrappedType =>
+        createSimpleProperty(wrappedType, models)
       }
     } else {
       createSimpleProperty(fieldType, models).map { property =>

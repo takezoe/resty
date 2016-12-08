@@ -34,10 +34,13 @@ trait RestyKernel {
               case e: InvocationTargetException => e.getCause
               case e => e
             }
+            cause.printStackTrace() // TODO use logger
             processResponse(response, InternalServerError(ErrorModel(Seq(cause.toString))))
           case e: InvocationTargetException =>
+            e.printStackTrace() // TODO use logger
             processResponse(response, InternalServerError(ErrorModel(Seq(e.getCause.toString))))
           case e: Exception =>
+            e.printStackTrace() // TODO use logger
             processResponse(response, InternalServerError(ErrorModel(Seq(e.toString))))
         }
       }
@@ -58,6 +61,8 @@ trait RestyKernel {
           val result = action.function.invoke(controller.instance, params: _*)
           processResponse(response, result)
       }
+    } catch {
+      case e: ActionResultException => processResponse(response, e.result)
     } finally {
       removeServletAPI(controller)
     }
@@ -118,13 +123,14 @@ trait RestyKernel {
         writer.println(x)
         writer.flush()
       }
-      case x: ActionResult => {
+      case x: ActionResult[_] => {
         response.setStatus(x.status)
         x.headers.foreach { case (key, value) =>
           response.addHeader(key, value)
         }
-        x.body.foreach { body =>
-          processResponse(response, body)
+        x.body match {
+          case body: AnyRef => processResponse(response, body)
+          case _ =>
         }
       }
       case x: Array[Byte] =>

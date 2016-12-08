@@ -2,28 +2,31 @@ package com.github.takezoe.resty
 
 case class ErrorModel(errors: Seq[String])
 
-case class ActionResult(status: Int, body: Option[AnyRef], headers: Map[String, String] = Map.empty){
-  def withHeaders(headers: (String, String)*): ActionResult = {
+case class ActionResult[T](status: Int, body: T, headers: Map[String, String] = Map.empty){
+  def withHeaders(headers: (String, String)*): ActionResult[T] = {
     copy(headers = headers.toMap)
   }
 }
 
 object Ok {
-  def apply() = ActionResult(200, None)
-  def apply(body: AnyRef) = ActionResult(200, Some(body))
+  def apply[T](): T             = throw new ActionResultException(ActionResult(200, ()))
+  def apply[T](body: AnyRef): T = throw new ActionResultException(ActionResult(200, body))
 }
 
 object BadRequest {
-  def apply() = ActionResult(400, None)
-  def apply(body: AnyRef) = ActionResult(400, Some(body))
+  def apply[T](): T             = throw new ActionResultException(ActionResult(400, ()))
+  def apply[T](body: AnyRef): T = throw new ActionResultException(ActionResult(400, body))
 }
 
+
 object NotFound {
-  def apply() = ActionResult(404, None)
-  def apply(body: AnyRef) = ActionResult(404, Some(body))
+  def apply[T](): T             = throw new ActionResultException(ActionResult(404, ()))
+  def apply[T](body: AnyRef): T = throw new ActionResultException(ActionResult(404, body))
 }
 
 object InternalServerError {
-  def apply() = ActionResult(500, None)
-  def apply(body: AnyRef) = ActionResult(500, Some(body))
+  def apply[T](): T             = throw new ActionResultException(ActionResult(500, ()))
+  def apply[T](body: AnyRef): T = throw new ActionResultException(ActionResult(500, body))
 }
+
+class ActionResultException(val result: ActionResult[_]) extends RuntimeException
