@@ -130,7 +130,7 @@ Also following types are supported as the return value of the action method:
 - `String` is responded as `text/plain; charset=UTF-8`
 - `Array[Byte]`, `InputStream`, `java.io.File` are responded as `application/octet-stream`
 - `AnyRef` is responded as `application/json`
-- `ActionResult` is responded as specified status, headers and body
+- `ActionResult[_]` is responded as specified status, headers and body
 
 ## Servlet API
 
@@ -152,9 +152,54 @@ Resty provides Swagger integration in default. Swagger JSON is provided at `http
 
 ![Swagger integration](swagger.png)
 
+Add following parameter to `web.xml` to enable Swagger integration:
+
+```xml
+<context-param>
+  <param-name>resty.swagger</param-name>
+  <param-value>enable</param-value>
+</context-param>
+```
+
 ## Hystrix integration
 
 Resty also provides Hystrix integration in default. Metrics are published for each operations. The stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
 
 ![Hystrix integration](hystrix.png)
 
+Add following parameter to `web.xml` to enable Hystrix integration:
+
+```xml
+<context-param>
+  <param-name>resty.hystrix</param-name>
+  <param-value>enable</param-value>
+</context-param>
+```
+
+## Zipkin integration
+
+Furthermore, Resty supports Zipkin as well. You can send execution results to the Zipkin server by enabling Zipkin support and using `HttpClientSupport` for calling other APIs.
+
+```scala
+class HelloController extends HttpClientSupport {
+  @Action(method = "GET", path = "/hello/{id}")
+  def hello(id: Int): Message = {
+    // Call other API using methods provided by HttpClientSupport
+    val user = httpGet[User](s"http://localhost:8080/user/${id}")
+    Message(s"Hello ${user.name}!")
+  }
+}
+```
+
+Add following parameter to `web.xml` to enable Zipkin integration:
+
+```xml
+<context-param>
+  <param-name>resty.zipkin</param-name>
+  <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.zipkin.server.url</param-name>
+  <param-value>http://127.0.0.1:9411/api/v1/spans</param-value>
+</context-param>
+```
