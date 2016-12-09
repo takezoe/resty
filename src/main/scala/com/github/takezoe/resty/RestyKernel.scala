@@ -62,6 +62,10 @@ trait RestyKernel {
           processResponse(response, result)
       }
     } catch {
+      case e: InvocationTargetException => e.getCause match {
+        case e: ActionResultException => processResponse(response, e.result)
+        case e => throw e
+      }
       case e: ActionResultException => processResponse(response, e.result)
     } finally {
       removeServletAPI(controller)
