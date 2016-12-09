@@ -17,7 +17,7 @@ import zipkin.reporter.okhttp3.OkHttpSender
 
 import scala.reflect.ClassTag
 
-object ZipkinSupport {
+object HttpClientSupport {
 
   private val _brave = new AtomicReference[Brave](null)
   private val _httpClient = new AtomicReference[CloseableHttpClient](null)
@@ -25,7 +25,7 @@ object ZipkinSupport {
   def brave: Brave = {
     val instance = _brave.get()
     if(instance == null){
-      throw new IllegalStateException("ZipkinSupport has not been initialized yet.")
+      throw new IllegalStateException("HttpClientSupport has not been initialized or Zipkin support is disabled.")
     }
     instance
   }
@@ -33,34 +33,39 @@ object ZipkinSupport {
   def httpClient = {
     val instance = _httpClient.get()
     if(instance == null){
-      throw new IllegalStateException("ZipkinSupport has not been initialized yet.")
+      throw new IllegalStateException("HttpClientSupport has not been initialized yet.")
     }
     instance
   }
 
   def initialize(sce: ServletContextEvent): Unit = {
-    if(_brave.get() != null){
-      throw new IllegalArgumentException("ZipkinSupport has been already initialized.")
+    if(_httpClient.get() != null){
+      throw new IllegalArgumentException("HttpClientSupport has been already initialized.")
     }
-    val name = sce.getServletContext.getServletContextName
-    val url = sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl)
 
-    if(url == null || url.trim.isEmpty){
-      _brave.set(new Brave.Builder(name).build())
+    if("true" == sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSupport)){
+      val name = sce.getServletContext.getServletContextName
+      val url = sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl)
+
+      if(url == null || url.trim.isEmpty){
+        _brave.set(new Brave.Builder(name).build())
+      } else {
+        val reporter = AsyncReporter.builder(OkHttpSender.create(url)).build()
+        _brave.set(new Brave.Builder(name).reporter(reporter).build())
+      }
+
+      _httpClient.set(HttpClients.custom()
+        .addInterceptorFirst(BraveHttpRequestInterceptor.create(HttpClientSupport.brave))
+        .addInterceptorFirst(BraveHttpResponseInterceptor.create(HttpClientSupport.brave))
+        .build())
     } else {
-      val reporter = AsyncReporter.builder(OkHttpSender.create(url)).build()
-      _brave.set(new Brave.Builder(name).reporter(reporter).build())
+      _httpClient.set(HttpClients.createDefault())
     }
-
-    _httpClient.set(HttpClients.custom()
-      .addInterceptorFirst(BraveHttpRequestInterceptor.create(ZipkinSupport.brave))
-      .addInterceptorFirst(BraveHttpResponseInterceptor.create(ZipkinSupport.brave))
-      .build())
   }
 
   def shutdown(sce: ServletContextEvent): Unit = {
-    if(_brave.get() == null){
-      throw new IllegalArgumentException("ZipkinSupport is inactive now.")
+    if(_httpClient.get() == null){
+      throw new IllegalArgumentException("HttpClientSupport is inactive now.")
     }
     _brave.set(null)
     _httpClient.get().close()
@@ -114,7 +119,7 @@ trait HttpClientSupport {
     execute(builder, configurer, c.runtimeClass)
   }
 
-  protected def httpClient = ZipkinSupport.httpClient
+  protected def httpClient = HttpClientSupport.httpClient
 
   protected def execute[T](builder: RequestBuilder, configurer: RequestBuilder => Unit, clazz: Class[_]): Either[ErrorModel, T] = {
     configurer(builder)

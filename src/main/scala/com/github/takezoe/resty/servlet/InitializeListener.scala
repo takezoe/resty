@@ -4,7 +4,7 @@ import java.util.EnumSet
 import javax.servlet.{DispatcherType, ServletContextEvent, ServletContextListener}
 import javax.servlet.annotation.WebListener
 
-import com.github.takezoe.resty.{HystrixSupport, Resty, SwaggerController, ZipkinSupport}
+import com.github.takezoe.resty._
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet
 
 @WebListener
@@ -13,8 +13,8 @@ class InitializeListener extends ServletContextListener {
   override def contextInitialized(sce: ServletContextEvent): Unit = {
     val context = sce.getServletContext
 
-    // Initialize Zipkin support
-    ZipkinSupport.initialize(sce)
+    // Initialize HttpClientSupport support
+    HttpClientSupport.initialize(sce)
     if("enable" == context.getInitParameter(ConfigKeys.ZipkinSupport)) {
       context.addFilter("ZipkinBraveFilter", new ZipkinBraveFilter())
       context.getFilterRegistration("ZipkinBraveFilter").addMappingForUrlPatterns(EnumSet.allOf(classOf[DispatcherType]), true, "/*")
@@ -36,7 +36,7 @@ class InitializeListener extends ServletContextListener {
   }
 
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
-    ZipkinSupport.shutdown(sce)
+    HttpClientSupport.shutdown(sce)
     HystrixSupport.shutdown(sce)
   }
 
