@@ -5,6 +5,7 @@ import javax.servlet.{DispatcherType, ServletContextEvent, ServletContextListene
 import javax.servlet.annotation.WebListener
 
 import com.github.takezoe.resty._
+import com.github.takezoe.resty.util.StringUtils
 import com.netflix.hystrix.contrib.metrics.eventstream.HystrixMetricsStreamServlet
 
 @WebListener
@@ -15,13 +16,14 @@ class InitializeListener extends ServletContextListener {
 
     // Initialize HttpClientSupport support
     HttpClientSupport.initialize(sce)
-    if("enable" == context.getInitParameter(ConfigKeys.ZipkinSupport)) {
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.ZipkinSupport))){
       context.addFilter("ZipkinBraveFilter", new ZipkinBraveFilter())
-      context.getFilterRegistration("ZipkinBraveFilter").addMappingForUrlPatterns(EnumSet.allOf(classOf[DispatcherType]), true, "/*")
+      context.getFilterRegistration("ZipkinBraveFilter")
+        .addMappingForUrlPatterns(EnumSet.allOf(classOf[DispatcherType]), true, "/*")
     }
 
     // Initialize Swagger support
-    if("enable" == context.getInitParameter(ConfigKeys.SwaggerSupport)){
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.SwaggerSupport))){
       Resty.register(new SwaggerController())
       context.addServlet("SwaggerUIServlet", new SwaggerUIServlet())
       context.getServletRegistration("SwaggerUIServlet").addMapping("/swagger-ui/*")
@@ -29,7 +31,7 @@ class InitializeListener extends ServletContextListener {
 
     // Initialize Hystrix support
     HystrixSupport.initialize(sce)
-    if("enable" == context.getInitParameter(ConfigKeys.HystrixSupport)){
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.HystrixSupport))){
       context.addServlet("HystrixMetricsStreamServlet", new HystrixMetricsStreamServlet())
       context.getServletRegistration("HystrixMetricsStreamServlet").addMapping("/hystrix.stream")
     }
@@ -43,8 +45,9 @@ class InitializeListener extends ServletContextListener {
 }
 
 object ConfigKeys {
-  val ZipkinSupport   = "resty.zipkin"
-  val ZipkinServerUrl = "resty.zipkin.server.url"
-  val SwaggerSupport  = "resty.swagger"
-  val HystrixSupport  = "resty.hystrix"
+  val ZipkinSupport    = "resty.zipkin"
+  val ZipkinServerUrl  = "resty.zipkin.server.url"
+  val ZipkinSampleRate = "resty.zipkin.sample.rate"
+  val SwaggerSupport   = "resty.swagger"
+  val HystrixSupport   = "resty.hystrix"
 }

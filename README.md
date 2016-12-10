@@ -199,6 +199,10 @@ Add following parameter to `web.xml` to enable Zipkin integration:
   <param-value>enable</param-value>
 </context-param>
 <context-param>
+  <param-name>resty.zipkin.sample.rate</param-name>
+  <param-value>1.0</param-value>
+</context-param>
+<context-param>
   <param-name>resty.zipkin.server.url</param-name>
   <param-value>http://127.0.0.1:9411/api/v1/spans</param-value>
 </context-param>

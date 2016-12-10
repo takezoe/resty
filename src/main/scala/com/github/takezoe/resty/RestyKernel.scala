@@ -8,7 +8,7 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import com.github.takezoe.resty.model.{ActionDef, ControllerDef, ParamDef}
 import com.github.takezoe.resty.servlet.ConfigKeys
-import com.github.takezoe.resty.util.JsonUtils
+import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
 import com.netflix.hystrix.HystrixCommand.Setter
 import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
 import com.netflix.hystrix.exception.HystrixRuntimeException
@@ -200,7 +200,7 @@ object HystrixSupport {
   }
 
   def initialize(sce: ServletContextEvent): Unit = {
-    if("enable" == sce.getServletContext.getInitParameter(ConfigKeys.HystrixSupport)){
+    if("enable" == StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.HystrixSupport))){
       enable.set(true)
     }
   }

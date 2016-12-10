@@ -3,10 +3,10 @@ package com.github.takezoe.resty
 import java.util.concurrent.atomic.AtomicReference
 import javax.servlet.ServletContextEvent
 
-import com.github.kristofa.brave.Brave
+import com.github.kristofa.brave.{Brave, Sampler}
 import com.github.kristofa.brave.httpclient.{BraveHttpRequestInterceptor, BraveHttpResponseInterceptor}
 import com.github.takezoe.resty.servlet.ConfigKeys
-import com.github.takezoe.resty.util.JsonUtils
+import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
 import org.apache.commons.io.IOUtils
 import org.apache.http.client.entity.EntityBuilder
 import org.apache.http.client.methods.RequestBuilder
@@ -43,16 +43,21 @@ object HttpClientSupport {
       throw new IllegalArgumentException("HttpClientSupport has been already initialized.")
     }
 
-    if("true" == sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSupport)){
+    if("enable" == StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSupport))){
       val name = sce.getServletContext.getServletContextName
-      val url = sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl)
+      val url  = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl))
+      val rate = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSampleRate))
+      val builder = new Brave.Builder(name)
 
-      if(url == null || url.trim.isEmpty){
-        _brave.set(new Brave.Builder(name).build())
-      } else {
-        val reporter = AsyncReporter.builder(OkHttpSender.create(url)).build()
-        _brave.set(new Brave.Builder(name).reporter(reporter).build())
+      if(url.nonEmpty){
+        val reporter = AsyncReporter.builder(OkHttpSender.create(url.trim)).build()
+        builder.reporter(reporter)
       }
+      if(rate.nonEmpty){
+        val sampler = Sampler.create(rate.toFloat)
+        builder.traceSampler(sampler)
+      }
+      _brave.set(builder.build())
 
       _httpClient.set(HttpClients.custom()
         .addInterceptorFirst(BraveHttpRequestInterceptor.create(HttpClientSupport.brave))
