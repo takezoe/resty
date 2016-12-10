@@ -117,8 +117,9 @@ trait RestyKernel {
     }
   }
 
-  protected def processResponse(response: HttpServletResponse, result: AnyRef): Unit = {
+  protected def processResponse(response: HttpServletResponse, result: Any): Unit = {
     result match {
+      case x: Unit => {}
       case x: String => {
         if(response.getContentType == null) {
           response.setContentType("text/plain; charset=UTF-8")
