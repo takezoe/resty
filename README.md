@@ -117,6 +117,7 @@ class HelloController {
 
 Resty supports following type as the parameter argument:
 
+- `Unit`
 - `String`
 - `Int`
 - `Long`
