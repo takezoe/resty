@@ -45,7 +45,7 @@ trait RestyKernel {
         }
       }
       case None => {
-        processResponse(response, NotFound())
+        processResponse(response, ActionResult(404, ()))
       }
     }
   }
