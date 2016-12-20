@@ -3,7 +3,7 @@ package com.github.takezoe.resty
 import java.io.{File, InputStream}
 import java.lang.reflect.{Field, Method}
 
-import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty}
+import com.fasterxml.jackson.annotation.{JsonIgnore, JsonIgnoreProperties, JsonProperty}
 import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
@@ -122,16 +122,22 @@ class SwaggerController {
         createProperty(field, models).foreach { property =>
           val param = clazz.getConstructors.head.getParameters.find(_.getName == field.getName)
 
-          val ignore = param.flatMap { param =>
-            Option(param.getAnnotation(classOf[JsonIgnore])).map { jsonIgnore =>
-              jsonIgnore.value()
-            }
-          }.getOrElse(false)
+          val ignore =
+            // Check @JsonIgnoreProperties
+            Option(clazz.getAnnotation(classOf[JsonIgnoreProperties])).map { a =>
+              a.value().contains(field.getName)
+            }.getOrElse(false) //|| // TODO jackson-module-scala does not seem to support @JsonIgnore
+//            // Check @JsonIgnore
+//            param.flatMap { param =>
+//              Option(param.getAnnotation(classOf[JsonIgnore])).map { a =>
+//                a.value()
+//              }
+//            }.getOrElse(false)
 
           if(!ignore){
             val propertyName = param.flatMap { param =>
-              Option(param.getAnnotation(classOf[JsonProperty])).map { jsonProperty =>
-                jsonProperty.value()
+              Option(param.getAnnotation(classOf[JsonProperty])).map { a =>
+                a.value()
               }
             }.getOrElse(field.getName)
 
