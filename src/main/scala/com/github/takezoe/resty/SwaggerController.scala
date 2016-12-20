@@ -3,6 +3,7 @@ package com.github.takezoe.resty
 import java.io.{File, InputStream}
 import java.lang.reflect.{Field, Method}
 
+import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty}
 import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
@@ -119,7 +120,23 @@ class SwaggerController {
     clazz.getDeclaredFields.foreach { field =>
       if(field.getName != "$outer"){
         createProperty(field, models).foreach { property =>
-          model.addProperty(field.getName, property)
+          val param = clazz.getConstructors.head.getParameters.find(_.getName == field.getName)
+
+          val ignore = param.flatMap { param =>
+            Option(param.getAnnotation(classOf[JsonIgnore])).map { jsonIgnore =>
+              jsonIgnore.value()
+            }
+          }.getOrElse(false)
+
+          if(!ignore){
+            val propertyName = param.flatMap { param =>
+              Option(param.getAnnotation(classOf[JsonProperty])).map { jsonProperty =>
+                jsonProperty.value()
+              }
+            }.getOrElse(field.getName)
+
+            model.addProperty(propertyName, property)
+          }
         }
       }
     }
