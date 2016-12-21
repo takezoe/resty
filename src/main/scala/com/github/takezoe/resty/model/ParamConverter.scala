@@ -128,7 +128,12 @@ object ParamConverter {
         try {
           Right(JsonUtils.deserialize(values.head, clazz))
         } catch {
-          case e: Exception => Left(e.getMessage)
+          case e: Exception => {
+            e.getCause match {
+              case cause: AssertionError => Left(cause.getMessage)
+              case _ => Left(e.getMessage)
+            }
+          }
         }
       }
     }
