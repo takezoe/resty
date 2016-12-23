@@ -130,7 +130,7 @@ object ParamConverter {
         } catch {
           case e: Exception => {
             e.getCause match {
-              case cause: AssertionError => Left(cause.getMessage)
+              case cause: AssertionError => Left(cause.getMessage.replaceFirst("assertion failed: ", ""))
               case _ => Left(e.getMessage)
             }
           }
