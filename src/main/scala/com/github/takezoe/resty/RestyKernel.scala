@@ -14,8 +14,11 @@ import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
 import com.netflix.hystrix.exception.HystrixRuntimeException
 import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey, HystrixCommandProperties}
 import org.apache.commons.io.IOUtils
+import org.slf4j.LoggerFactory
 
 trait RestyKernel {
+
+  private val logger = LoggerFactory.getLogger(classOf[RestyKernel])
 
   protected def processAction(request: HttpServletRequest, response: HttpServletResponse, method: String): Unit = {
     Resty.findAction(request.getRequestURI, method) match {
@@ -34,14 +37,14 @@ trait RestyKernel {
               case e: InvocationTargetException => e.getCause
               case e => e
             }
-            cause.printStackTrace() // TODO use logger
-            processResponse(response, InternalServerError(ErrorModel(Seq(cause.toString))))
+            logger.error("Error during processing action", cause)
+            processResponse(response, ActionResult(500, ErrorModel(Seq(cause.toString))))
           case e: InvocationTargetException =>
-            e.printStackTrace() // TODO use logger
-            processResponse(response, InternalServerError(ErrorModel(Seq(e.getCause.toString))))
+            logger.error("Error during processing action", e.getCause)
+            processResponse(response, ActionResult(500, ErrorModel(Seq(e.getCause.toString))))
           case e: Exception =>
-            e.printStackTrace() // TODO use logger
-            processResponse(response, InternalServerError(ErrorModel(Seq(e.toString))))
+            logger.error("Error during processing action", e)
+            processResponse(response, ActionResult(500, ErrorModel(Seq(e.toString))))
         }
       }
       case None => {
