@@ -1,5 +1,6 @@
 package com.github.takezoe.resty
 
+import java.lang.reflect.Method
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 
@@ -31,30 +32,35 @@ object Resty {
       instance    = controller
     )
 
-    controller.getClass.getMethods.foreach { method =>
+    val controllerClass = controller.getClass
+
+    controllerClass.getMethods.foreach { method =>
       val annotation = method.getAnnotation(classOf[Action])
       if(annotation != null){
-        val paramDefs = method.getParameters.zipWithIndex.map { case (param, i) =>
-          method.getParameterAnnotations()(i).find(_.annotationType() == classOf[Param]).map { case x: Param =>
-            // @Param is specified
-            val paramName = if(x.name().nonEmpty) x.name else param.getName
-            val paramType = param.getType
-            ParamDef(paramFrom(x.from(), annotation.path(), paramName, paramType), paramName, x.description(), method, i, paramType)
-          }.getOrElse {
-            // @Param is not specified
-            val paramName = param.getName
-            val paramType = param.getType
-            ParamDef(paramFrom("", annotation.path(), paramName, paramType), paramName, "", method, i, paramType)
-          }
-        }
         _actions.add((controllerDef, ActionDef(
           annotation.method().toLowerCase(),
           annotation.path(),
           annotation.description(),
           annotation.deprecated(),
-          paramDefs,
+          getParamDefs(method, controllerClass, annotation),
           method
         )))
+      }
+    }
+  }
+
+  protected def getParamDefs(actionMethod: Method, controllerClass: Class[_], action: Action): Seq[ParamDef] = {
+    actionMethod.getParameters.zipWithIndex.map { case (param, i) =>
+      actionMethod.getParameterAnnotations()(i).find(_.annotationType() == classOf[Param]).map { case x: Param =>
+        // @Param is specified
+        val paramName = if(x.name().nonEmpty) x.name else param.getName
+        val paramType = param.getType
+        ParamDef(paramFrom(x.from(), action.path(), paramName, paramType), paramName, x.description(), actionMethod, i, paramType)
+      }.getOrElse {
+        // @Param is not specified
+        val paramName = param.getName
+        val paramType = param.getType
+        ParamDef(paramFrom("", action.path(), paramName, paramType), paramName, "", actionMethod, i, paramType)
       }
     }
   }
