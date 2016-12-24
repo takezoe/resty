@@ -50,7 +50,7 @@ class SwaggerController {
       if(action.description.nonEmpty){
         operation.setDescription(action.description)
       }
-      if(action.deperecated){
+      if(action.deprecated){
         operation.setDeprecated(true)
       }
 

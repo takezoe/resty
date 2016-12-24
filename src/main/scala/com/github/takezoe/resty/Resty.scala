@@ -8,11 +8,13 @@ import com.github.takezoe.resty.model.{ActionDef, AppInfo, ControllerDef, ParamD
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
+/**
+ * Manages all actions information of the application.
+ */
 object Resty {
 
   private val _appInfo = new AtomicReference[AppInfo](AppInfo())
   private val _actions = new CopyOnWriteArrayList[(ControllerDef, ActionDef)]()
-  //register(new SwaggerController())
 
   def register(appInfo: AppInfo): Unit = {
     _appInfo.set(appInfo)

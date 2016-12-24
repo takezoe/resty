@@ -4,6 +4,9 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import org.apache.commons.io.IOUtils
 
+/**
+ * A base class for servlets that provide resources on the classpath as web contents.
+ */
 abstract class ResourceServlet(basePath: String) extends HttpServlet {
 
   protected override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {

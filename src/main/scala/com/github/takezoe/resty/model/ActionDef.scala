@@ -6,7 +6,7 @@ case class ActionDef(
   method: String,
   path: String,
   description: String,
-  deperecated: Boolean,
+  deprecated: Boolean,
   params: Seq[ParamDef],
   function: Method
 )
