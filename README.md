@@ -147,6 +147,26 @@ class HelloController extends ServletAPI {
 }
 ```
 
+## Validation
+
+It's possible to validate JSON properties by asserting properties in the constructor of the mapped case class.
+
+```scala
+case class Message(message: String){
+  assert(message.length < 10, "message must be less than 10 charactors.")
+}
+```
+
+When the parameter value is invalid, Resty responds the following response with the `400 BadRequest` status:
+
+```javascript
+{
+  "errors": [
+    "message must be less than 10 charactors."
+  ]
+}
+```
+
 ## Swagger integration
 
 Resty provides Swagger integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
