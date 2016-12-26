@@ -11,20 +11,17 @@ class LoggerController {
   def levels(): Seq[LoggerModel] = {
     val factory = getLoggerContext()
     factory.getLoggerList.asScala.map { logger =>
-      if(logger.getLevel == null){
-        LoggerModel(logger.getName, "UNSPECIFIED")
-      } else {
-        LoggerModel(logger.getName, logger.getEffectiveLevel.levelStr)
-      }
+      LoggerModel(logger.getName, Option(logger.getLevel).map(_.levelStr), logger.getEffectiveLevel.levelStr)
     }
   }
 
   @Action(method = "POST", path = "/logger/level")
-  def setLevel(model: LoggerModel): Unit = {
-    if(model.level != "UNSPECIFIED") {
-      val logger = getLogger(model.name)
-      logger.setLevel(
-        model.level match {
+  def setLevel(request: LogLevelUpdateRequest): Unit = {
+    val logger = getLogger(request.name)
+
+    request.level match {
+      case Some(level) =>
+        logger.setLevel(level match {
           case "OFF"   => Level.OFF
           case "ERROR" => Level.ERROR
           case "WARN"  => Level.WARN
@@ -32,19 +29,18 @@ class LoggerController {
           case "DEBUG" => Level.DEBUG
           case "TRACE" => Level.TRACE
           case "ALL"   => Level.ALL
-        }
-      )
+        })
+      case None =>
+        logger.setLevel(null)
     }
   }
 
   @Action(method = "POST", path = "/logger/levels")
-  def setLevels(model: LoggersModel): Unit = {
-    model.loggers.foreach { model =>
-      setLevel(model)
+  def setLevels(requests: LogLevelUpdateRequests): Unit = {
+    requests.loggers.foreach { request =>
+      setLevel(request)
     }
-    ()
   }
-
 
   protected def getLoggerContext(): LoggerContext = {
     val factory = StaticLoggerBinder.getSingleton().getLoggerFactory()
@@ -58,6 +54,8 @@ class LoggerController {
 
 }
 
-case class LoggerModel(name: String, level: String)
+case class LoggerModel(name: String, level: Option[String], effectiveLevel: String)
 
-case class LoggersModel(loggers: Seq[LoggerModel])
+case class LogLevelUpdateRequest(name: String, level: Option[String])
+
+case class LogLevelUpdateRequests(loggers: Seq[LogLevelUpdateRequest])
