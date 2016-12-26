@@ -122,6 +122,7 @@ trait RestyKernel {
 
   protected def processResponse(response: HttpServletResponse, result: Any): Unit = {
     result match {
+      case null => {}
       case x: Unit => {}
       case x: String => {
         if(response.getContentType == null) {
