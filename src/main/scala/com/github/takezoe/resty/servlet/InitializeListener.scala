@@ -35,6 +35,13 @@ class InitializeListener extends ServletContextListener {
       context.addServlet("HystrixMetricsStreamServlet", new HystrixMetricsStreamServlet())
       context.getServletRegistration("HystrixMetricsStreamServlet").addMapping("/hystrix.stream")
     }
+
+    // Initialize LogBack dynamic configuration
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.DynamicLogBack))){
+      Resty.register(new LoggerController())
+      context.addServlet("LoggerUIServlet", new LoggerUIServlet())
+      context.getServletRegistration("LoggerUIServlet").addMapping("/logger-ui/*")
+    }
   }
 
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
@@ -50,4 +57,5 @@ object ConfigKeys {
   val ZipkinSampleRate = "resty.zipkin.sample.rate"
   val SwaggerSupport   = "resty.swagger"
   val HystrixSupport   = "resty.hystrix"
+  val DynamicLogBack   = "resty.dynamic-logback"
 }
