@@ -29,12 +29,17 @@ class InitializeListener extends ServletContextListener {
       context.getServletRegistration("SwaggerUIServlet").addMapping("/swagger-ui/*")
     }
 
+    context.addServlet("LoggerUIServlet", new LoggerUIServlet())
+    context.getServletRegistration("LoggerUIServlet").addMapping("/logger-ui/*")
+
     // Initialize Hystrix support
     HystrixSupport.initialize(sce)
     if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.HystrixSupport))){
       context.addServlet("HystrixMetricsStreamServlet", new HystrixMetricsStreamServlet())
       context.getServletRegistration("HystrixMetricsStreamServlet").addMapping("/hystrix.stream")
     }
+
+    Resty.register(new LoggerController())
   }
 
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
