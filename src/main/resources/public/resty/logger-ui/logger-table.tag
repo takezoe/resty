@@ -23,6 +23,7 @@
     <input type="reset" value="Reset" class="btn btn-default">
     <input type="button" value="Save" class="btn btn-primary" onclick={save}>
   </form>
+  <script>
   this.levels = ['', 'OFF', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'];
 
   this.items = [];
@@ -68,4 +69,5 @@
       }
     });
   }
+  </script>
 </logger-table>
