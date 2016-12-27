@@ -81,7 +81,7 @@ object Resty {
 
   protected def paramFrom(from: String, path: String, name: String,
                           actionMethod: Method, index: Int, clazz: Class[_]): String = {
-    if(from.nonEmpty) from else {
+    val f = if(from.nonEmpty) from else {
       if(ParamDef.isSimpleType(clazz) || ParamDef.isSimpleContainerType(actionMethod, index, clazz)){
         if(path.contains(s"{${name}}")) {
           "path"
@@ -92,6 +92,8 @@ object Resty {
         "body"
       }
     }
+    println(clazz + ": " + f)
+    f
   }
 
   def findAction(path: String, method: String): Option[(ControllerDef, ActionDef, Map[String, Seq[String]])] = {

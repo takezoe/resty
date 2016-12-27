@@ -78,7 +78,7 @@ object ParamConverter {
     }
   }
 
-  class SeqStringConverter(name: String, converter: ParamConverter) extends ParamConverter {
+  class SimpleSeqConverter(name: String, converter: ParamConverter) extends ParamConverter {
     override def convert(values: Seq[String]): Either[String, AnyRef] = {
       if (values == null) {
         Right(Seq.empty)
@@ -101,7 +101,26 @@ object ParamConverter {
     }
   }
 
-  class OptionStringConverter(name: String, converter: ParamConverter) extends ParamConverter {
+  class SimpleArrayConverter(name: String, converter: ParamConverter) extends SimpleSeqConverter(name, converter) {
+    override def convert(values: Seq[String]): Either[String, AnyRef] = {
+      if (values == null) {
+        Right(Array[Int]())
+      } else {
+        val converted: Seq[Either[String, AnyRef]] = values.map { x => converter.convert(Seq(x)) }
+        converted.find(_.isLeft).getOrElse {
+          val values = converted.map(_.right.get)
+          Right(converter match {
+            case _: StringConverter  => values.asInstanceOf[Seq[String]].toArray
+            case _: IntConverter     => values.asInstanceOf[Seq[Int]].toArray
+            case _: LongConverter    => values.asInstanceOf[Seq[Long]].toArray
+            case _: BooleanConverter => values.asInstanceOf[Seq[Boolean]].toArray
+          })
+        }
+      }
+    }
+  }
+
+  class OptionConverter(name: String, converter: ParamConverter) extends ParamConverter {
     override def convert(values: Seq[String]): Either[String, AnyRef] = {
       if (values == null || values.isEmpty) {
         Right(None)

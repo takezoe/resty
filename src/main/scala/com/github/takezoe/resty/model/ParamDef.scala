@@ -15,10 +15,14 @@ object ParamDef {
   def apply(from: String, name: String, description: String, method: Method, index: Int, clazz: Class[_]): ParamDef = {
     val converter = simpleTypeConverter(name, clazz)
       .getOrElse {
-        if(clazz == classOf[Seq[_]] && isSimpleContainerType(method, index, clazz)){
-          new ParamConverter.SeqStringConverter(name, getWrappedTypeConverter(name, method, index))
+        if(clazz == classOf[Seq[_]] && isSimpleContainerType(method, index, clazz)) {
+          new ParamConverter.SimpleSeqConverter(name, getWrappedTypeConverter(name, method, index))
+        } else if(clazz.isArray && isSimpleContainerType(method, index, clazz)) {
+          new ParamConverter.SimpleArrayConverter(name,
+            simpleTypeConverter(name, clazz.getComponentType).getOrElse(new ParamConverter.StringConverter(name))
+          )
         } else if(clazz == classOf[Option[_]]){
-          new ParamConverter.OptionStringConverter(name, getWrappedTypeConverter(name, method, index))
+          new ParamConverter.OptionConverter(name, getWrappedTypeConverter(name, method, index))
         } else {
           new ParamConverter.JsonConverter(name, clazz)
         }
@@ -39,9 +43,11 @@ object ParamDef {
   def isSimpleContainerType(method: Method, index: Int, clazz: Class[_]): Boolean = {
     if(clazz == classOf[Option[_]]){
       true
-    } else if(clazz == classOf[Seq[_]]){
+    } else if(clazz == classOf[Seq[_]]) {
       val t = ReflectionUtils.getWrappedTypeOfMethodArgument(method, index)
       t.exists(isSimpleType)
+    } else if(clazz.isArray){
+      isSimpleType(clazz.getComponentType)
     } else {
       false
     }
