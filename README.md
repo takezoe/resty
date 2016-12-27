@@ -115,7 +115,7 @@ class HelloController {
 
 ## Types
 
-Resty supports following type as the parameter argument:
+Resty supports following types as the parameter argument:
 
 - `Unit`
 - `String`
@@ -124,6 +124,8 @@ Resty supports following type as the parameter argument:
 - `Boolean`
 - `Option[T]`
 - `Seq[T]`
+- `Array[T]`
+- `Array[Byte]` (for Base64 encoded string)
 - `AnyRef` (for JSON in the request body)
 
 Also following types are supported as the return value of the action method:
@@ -212,7 +214,7 @@ class HelloController extends HttpClientSupport {
 }
 ```
 
-Add following parameter to `web.xml` to enable Zipkin integration:
+Add following parameters to `web.xml` to enable Zipkin integration:
 
 ```xml
 <context-param>
@@ -226,5 +228,20 @@ Add following parameter to `web.xml` to enable Zipkin integration:
 <context-param>
   <param-name>resty.zipkin.server.url</param-name>
   <param-value>http://127.0.0.1:9411/api/v1/spans</param-value>
+</context-param>
+```
+
+## Dynamic LogBack configuration
+
+You can change log level of LogBack loggers dynamically via Web UI at `http://localhost:8080/logger-ui/`.
+
+![Dynamic LogBack configuration](dynamic-logback.png)
+
+Add a following parameter to `web.xml` to enable dynamic LogBack configuration:
+
+```xml
+<context-param>
+  <param-name>resty.dynamic-logback</param-name>
+  <param-value>enable</param-value>
 </context-param>
 ```
