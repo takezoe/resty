@@ -55,19 +55,34 @@ object Resty {
         // @Param is specified
         val paramName = if(x.name().nonEmpty) x.name else param.getName
         val paramType = param.getType
-        ParamDef(paramFrom(x.from(), action.path(), paramName, paramType), paramName, x.description(), actionMethod, i, paramType)
+        ParamDef(
+          from        = paramFrom(x.from(), action.path(), paramName, actionMethod, i, paramType),
+          name        = paramName,
+          description = x.description(),
+          method      = actionMethod,
+          index       = i,
+          clazz       = paramType
+        )
       }.getOrElse {
         // @Param is not specified
         val paramName = param.getName
         val paramType = param.getType
-        ParamDef(paramFrom("", action.path(), paramName, paramType), paramName, "", actionMethod, i, paramType)
+        ParamDef(
+          from        = paramFrom("", action.path(), paramName, actionMethod, i, paramType),
+          name        = paramName,
+          description = "",
+          method      = actionMethod,
+          index       = i,
+          clazz       = paramType
+        )
       }
     }
   }
 
-  protected def paramFrom(from: String, path: String, name: String, clazz: Class[_]): String = {
+  protected def paramFrom(from: String, path: String, name: String,
+                          actionMethod: Method, index: Int, clazz: Class[_]): String = {
     if(from.nonEmpty) from else {
-      if(ParamDef.isSimpleType(clazz) || ParamDef.isContainerType(clazz)){
+      if(ParamDef.isSimpleType(clazz) || ParamDef.isSimpleContainerType(actionMethod, index, clazz)){
         if(path.contains(s"{${name}}")) {
           "path"
         } else {

@@ -55,7 +55,7 @@
           $.ajax({
             type: 'post',
             url: 'http://localhost:8080/logger/levels',
-            data: JSON.stringify({ loggers: loggers }),
+            data: JSON.stringify(loggers),
             contentType: 'application/json',
             success: function(){
               $('h1').after($(

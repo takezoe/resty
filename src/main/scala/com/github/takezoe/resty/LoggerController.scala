@@ -36,8 +36,8 @@ class LoggerController {
   }
 
   @Action(method = "POST", path = "/logger/levels")
-  def setLevels(requests: LogLevelUpdateRequests): Unit = {
-    requests.loggers.foreach { request =>
+  def setLevels(requests: Array[LogLevelUpdateRequest]): Unit = {
+    requests.foreach { request =>
       setLevel(request)
     }
   }

@@ -15,7 +15,7 @@ object ParamDef {
   def apply(from: String, name: String, description: String, method: Method, index: Int, clazz: Class[_]): ParamDef = {
     val converter = simpleTypeConverter(name, clazz)
       .getOrElse {
-        if(clazz == classOf[Seq[_]]){
+        if(clazz == classOf[Seq[_]] && isSimpleContainerType(method, index, clazz)){
           new ParamConverter.SeqStringConverter(name, getWrappedTypeConverter(name, method, index))
         } else if(clazz == classOf[Option[_]]){
           new ParamConverter.OptionStringConverter(name, getWrappedTypeConverter(name, method, index))
@@ -36,8 +36,15 @@ object ParamDef {
     clazz == classOf[String] || clazz == classOf[Int] || clazz == classOf[Long] || clazz == classOf[Boolean]
   }
 
-  def isContainerType(clazz: Class[_]): Boolean = {
-    clazz == classOf[Option[_]] || clazz == classOf[Seq[_]]
+  def isSimpleContainerType(method: Method, index: Int, clazz: Class[_]): Boolean = {
+    if(clazz == classOf[Option[_]]){
+      true
+    } else if(clazz == classOf[Seq[_]]){
+      val t = ReflectionUtils.getWrappedTypeOfMethodArgument(method, index)
+      t.exists(isSimpleType)
+    } else {
+      false
+    }
   }
 
   protected def getWrappedTypeConverter(name: String, method: java.lang.reflect.Method, index: Int): ParamConverter = {

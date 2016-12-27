@@ -76,7 +76,7 @@ class SwaggerController {
             if(description.nonEmpty){ parameter.setDescription(description) }
             operation.addParameter(converter.parameter(parameter))
             if(converter.isInstanceOf[JsonConverter]){
-              models.put(clazz.getSimpleName, createModel(clazz, models))
+              models.put(clazz.getSimpleName, createModel(action.function, clazz, models))
             }
         }
       }
@@ -93,7 +93,7 @@ class SwaggerController {
         val returnType = classOf[ErrorModel]
         val response = new Response()
         response.setSchema(new RefProperty(returnType.getSimpleName))
-        models.put(returnType.getSimpleName, createModel(returnType, models))
+        models.put(returnType.getSimpleName, createModel(action.function, returnType, models))
         operation.addResponse("default", response)
         operation.produces("application/json")
       }
@@ -113,96 +113,113 @@ class SwaggerController {
     swagger
   }
 
-  protected def createModel(clazz: Class[_], models: mutable.HashMap[String, Model]): Model = {
-    val model = new ModelImpl()
-    model.setName(clazz.getSimpleName)
+  protected def createModel(actionMethod: Method, clazz: Class[_], models: mutable.HashMap[String, Model]): Model = {
+    // TODO: Jackson can not deserialize Seq[T] in default...
+    if(clazz == classOf[Seq[_]]) {
+      val model = new ArrayModel()
+      ReflectionUtils.getWrappedTypeOfMethodArgument(actionMethod, 0).foreach { wrappedType =>
+        createSimpleProperty(actionMethod, wrappedType, models).foreach { wrappedProperty =>
+          model.setItems(wrappedProperty)
+        }
+      }
+      model
+    } else if(clazz.isArray){
+      val model = new ArrayModel()
+      createSimpleProperty(actionMethod, clazz.getComponentType, models).foreach { wrappedProperty =>
+        model.setItems(wrappedProperty)
+      }
+      model
+    } else {
+      val model = new ModelImpl()
+      model.setName(clazz.getSimpleName)
 
-    clazz.getDeclaredFields.foreach { field =>
-      if(field.getName != "$outer"){
-        createProperty(field, models).foreach { property =>
-          val param = clazz.getConstructors.head.getParameters.find(_.getName == field.getName)
+      clazz.getDeclaredFields.foreach { field =>
+        if(field.getName != "$outer"){
+          createProperty(actionMethod, field, models).foreach { property =>
+            val param = clazz.getConstructors.head.getParameters.find(_.getName == field.getName)
 
-          val ignore =
+            val ignore =
             // Check @JsonIgnoreProperties
-            Option(clazz.getAnnotation(classOf[JsonIgnoreProperties])).map { a =>
-              a.value().contains(field.getName)
-            }.getOrElse(false) //|| // TODO jackson-module-scala does not seem to support @JsonIgnore
-//            // Check @JsonIgnore
-//            param.flatMap { param =>
-//              Option(param.getAnnotation(classOf[JsonIgnore])).map { a =>
-//                a.value()
-//              }
-//            }.getOrElse(false)
+              Option(clazz.getAnnotation(classOf[JsonIgnoreProperties])).map { a =>
+                a.value().contains(field.getName)
+              }.getOrElse(false) //|| // TODO jackson-module-scala does not seem to support @JsonIgnore
+            //            // Check @JsonIgnore
+            //            param.flatMap { param =>
+            //              Option(param.getAnnotation(classOf[JsonIgnore])).map { a =>
+            //                a.value()
+            //              }
+            //            }.getOrElse(false)
 
-          if(!ignore){
-            val propertyName = param.flatMap { param =>
-              Option(param.getAnnotation(classOf[JsonProperty])).map { a =>
-                a.value()
-              }
-            }.getOrElse(field.getName)
+            if(!ignore){
+              val propertyName = param.flatMap { param =>
+                Option(param.getAnnotation(classOf[JsonProperty])).map { a =>
+                  a.value()
+                }
+              }.getOrElse(field.getName)
 
-            model.addProperty(propertyName, property)
+              model.addProperty(propertyName, property)
+            }
           }
         }
       }
-    }
 
-    model
+      model
+    }
   }
 
-  protected def createProperty(method: Method, models: mutable.HashMap[String, Model]): Option[Property] = {
-    val fieldType = method.getReturnType
+  protected def createProperty(actionMethod: Method, models: mutable.HashMap[String, Model]): Option[Property] = {
+    val fieldType = actionMethod.getReturnType
 
     // TODO Map support?
     if(fieldType == classOf[Option[_]]){
-      ReflectionUtils.getWrappedTypeOfMethod(method).flatMap { wrappedType =>
-        createSimpleProperty(wrappedType, models)
+      ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
+        createSimpleProperty(actionMethod, wrappedType, models)
       }
     } else if(fieldType == classOf[Seq[_]]) {
-      ReflectionUtils.getWrappedTypeOfMethod(method).map { wrappedType =>
+      ReflectionUtils.getWrappedTypeOfMethod(actionMethod).map { wrappedType =>
         val property = new ArrayProperty()
-        createSimpleProperty(wrappedType, models).foreach { wrappedProperty =>
+        createSimpleProperty(actionMethod, wrappedType, models).foreach { wrappedProperty =>
           property.setItems(wrappedProperty)
         }
         property
       }
     } else if(fieldType == classOf[ActionResult[_]]){
-      ReflectionUtils.getWrappedTypeOfMethod(method).flatMap { wrappedType =>
-        createSimpleProperty(wrappedType, models)
+      ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
+        createSimpleProperty(actionMethod, wrappedType, models)
       }
     } else {
-      createSimpleProperty(fieldType, models).map { property =>
+      createSimpleProperty(actionMethod, fieldType, models).map { property =>
         property.setRequired(true)
         property
       }
     }
   }
 
-  protected def createProperty(field: Field, models: mutable.HashMap[String, Model]): Option[Property] = {
+  protected def createProperty(actionMethod: Method, field: Field, models: mutable.HashMap[String, Model]): Option[Property] = {
     val fieldType = field.getType
 
     // TODO Map support?
     if(fieldType == classOf[Option[_]]){
       ReflectionUtils.getWrappedTypeOfField(field).flatMap { wrappedType =>
-        createSimpleProperty(wrappedType, models)
+        createSimpleProperty(actionMethod, wrappedType, models)
       }
     } else if(fieldType == classOf[Seq[_]]){
         ReflectionUtils.getWrappedTypeOfField(field).map { wrappedType =>
           val property = new ArrayProperty()
-          createSimpleProperty(wrappedType, models).foreach { wrappedProperty =>
+          createSimpleProperty(actionMethod, wrappedType, models).foreach { wrappedProperty =>
             property.setItems(wrappedProperty)
           }
           property
         }
     } else {
-      createSimpleProperty(fieldType, models).map { property =>
+      createSimpleProperty(actionMethod, fieldType, models).map { property =>
         property.setRequired(true)
         property
       }
     }
   }
 
-  protected def createSimpleProperty(clazz: Class[_], models: mutable.HashMap[String, Model]): Option[Property] = {
+  protected def createSimpleProperty(actionMethod: Method, clazz: Class[_], models: mutable.HashMap[String, Model]): Option[Property] = {
     if(clazz == classOf[String]){
       Some(new StringProperty())
     } else if(clazz == classOf[Int]){
@@ -218,7 +235,7 @@ class SwaggerController {
     } else if(clazz == classOf[Unit]){
       None
     } else {
-      models.put(clazz.getSimpleName, createModel(clazz, models))
+      models.put(clazz.getSimpleName, createModel(actionMethod, clazz, models))
       Some(new RefProperty(clazz.getSimpleName))
     }
   }
