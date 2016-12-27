@@ -4,17 +4,82 @@
   <meta charset="UTF-8">
   <title>LogBack Configuration</title>
   <link href='bootstrap-3.3.7/css/bootstrap.min.css' rel='stylesheet' type='text/css'/>
-  <script src='riot-3.0.5/riot+compiler.min.js' type='text/javascript'></script>
   <script src='jquery-3.1.1/jquery-3.1.1.min.js' type='text/javascript'></script>
   <script src='bootstrap-3.3.7/js/bootstrap.min.js' type='text/javascript'></script>
-  <script data-src="logger-table.tag" type="riot/tag"></script>
+  <script src="vuejs-2.1.7/vue.min.js" type="text/javascript"></script>
 </head>
 <body>
   <div class="container">
     <h1 class="page-header">LogBack Configuration</h1>
-    <logger-table></logger-table>
+    <form id="form" class="form">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th>Logger name</th>
+          <th>Log level</th>
+          <th>Update</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="logger in loggers">
+          <td>{{logger.name}}</td>
+          <td>{{logger.effectiveLevel}}</td>
+          <td>
+            <select class="logger" v-model="logger.level">
+              <option v-for="item in levels" v-bind:value="item">{{item}}</option>
+            </select>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+      <input type="reset" value="Reset" class="btn btn-default">
+      <input type="button" value="Save" class="btn btn-primary" v-on:click="save">
+    </form>
   </div>
   <script>
-    riot.mount('logger-table');
+    var app = new Vue({
+      el: '#form',
+      data: {
+        loggers: [],
+        levels: [
+          null, 'OFF', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'
+        ]
+      },
+      methods: {
+        save: function(event){
+          var loggers = [];
+          $.each(this.loggers, function(i, e){
+            loggers.push({ name: e.name, level: e.level });
+          });
+
+          $.ajax({
+            type: 'post',
+            url: 'http://localhost:8080/logger/levels',
+            data: JSON.stringify({ loggers: loggers }),
+            contentType: 'application/json',
+            success: function(){
+              $('h1').after($(
+                  '<div class="alert alert-success alert-dismissible" role="alert">' +
+                  '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+                  'Succeed to save configuration!' +
+                  '</div>'
+              ));
+              updateTable();
+            },
+            error: function(xhr, status, error){
+              console.log(error);
+            }
+          });
+        }
+      }
+    });
+
+    updateTable();
+
+    function updateTable() {
+      $.get('http://localhost:8080/logger/levels', function (items) {
+        app.$data.loggers = items;
+      });
+    }
   </script>
 </body>
