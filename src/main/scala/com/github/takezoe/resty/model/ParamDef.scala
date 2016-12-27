@@ -18,9 +18,13 @@ object ParamDef {
         if(clazz == classOf[Seq[_]] && isSimpleContainerType(method, index, clazz)) {
           new ParamConverter.SimpleSeqConverter(name, getWrappedTypeConverter(name, method, index))
         } else if(clazz.isArray && isSimpleContainerType(method, index, clazz)) {
-          new ParamConverter.SimpleArrayConverter(name,
-            simpleTypeConverter(name, clazz.getComponentType).getOrElse(new ParamConverter.StringConverter(name))
-          )
+          if(clazz.getComponentType == classOf[Byte]){
+            new ParamConverter.ByteArrayConverter(name)
+          } else {
+            new ParamConverter.SimpleArrayConverter(name,
+              simpleTypeConverter(name, clazz.getComponentType).getOrElse(new ParamConverter.StringConverter(name))
+            )
+          }
         } else if(clazz == classOf[Option[_]]){
           new ParamConverter.OptionConverter(name, getWrappedTypeConverter(name, method, index))
         } else {
@@ -37,7 +41,7 @@ object ParamDef {
   }
 
   def isSimpleType(clazz: Class[_]): Boolean = {
-    clazz == classOf[String] || clazz == classOf[Int] || clazz == classOf[Long] || clazz == classOf[Boolean]
+    clazz == classOf[String] || clazz == classOf[Int] || clazz == classOf[Long] || clazz == classOf[Boolean] || clazz == classOf[Byte]
   }
 
   def isSimpleContainerType(method: Method, index: Int, clazz: Class[_]): Boolean = {

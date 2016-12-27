@@ -1,5 +1,7 @@
 package com.github.takezoe.resty.model
 
+import java.util.Base64
+
 import com.github.takezoe.resty.util.JsonUtils
 import io.swagger.models.RefModel
 import io.swagger.models.parameters.{BodyParameter, Parameter, SerializableParameter}
@@ -117,6 +119,28 @@ object ParamConverter {
           })
         }
       }
+    }
+  }
+
+  class ByteArrayConverter(name: String) extends ParamConverter {
+    override def convert(values: Seq[String]): Either[String, AnyRef] = {
+      if (values == null || values.isEmpty) {
+        Left(s"${name} is required.")
+      } else {
+        try {
+          Right(Base64.getDecoder.decode(values.head))
+        } catch {
+          case e: IllegalArgumentException => Left(e.toString)
+        }
+      }
+    }
+
+    override def parameter(model: Parameter): Parameter = {
+      val param = model.asInstanceOf[SerializableParameter]
+      param.setName(name)
+      param.setType("string")
+      param.setFormat("byte")
+      param
     }
   }
 
