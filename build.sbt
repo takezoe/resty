@@ -4,7 +4,7 @@ organization := "com.github.takezoe"
 
 version := "0.0.6"
 
-scalaVersion := "2.12.0"
+scalaVersion := "2.12.1"
 
 libraryDependencies ++= Seq(
   "org.json4s"                   %% "json4s-scalap"                  % "3.5.0",
