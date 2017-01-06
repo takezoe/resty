@@ -9,41 +9,71 @@
   <script src="vuejs-2.1.7/vue.min.js" type="text/javascript"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="app">
     <h1 class="page-header">LogBack Configuration</h1>
-    <form id="form" class="form">
-      <table class="table table-bordered">
-        <thead>
-        <tr>
-          <th>Logger name</th>
-          <th>Log level</th>
-          <th>Update</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="logger in loggers">
-          <td>{{logger.name}}</td>
-          <td>{{logger.effectiveLevel}}</td>
-          <td>
-            <select class="logger" v-model="logger.level">
-              <option v-for="item in levels" v-bind:value="item">{{item}}</option>
-            </select>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-      <input type="reset" value="Reset" class="btn btn-default">
-      <input type="button" value="Save" class="btn btn-primary" v-on:click="save">
-    </form>
+    <ul class="nav nav-tabs" role="tablist">
+      <li role="presentation" class="active"><a href="#level" aria-controls="level" role="tab" data-toggle="tab">Log level</a></li>
+      <li role="presentation"><a href="#download" aria-controls="download" role="tab" data-toggle="tab">Download</a></li>
+    </ul>
+    <div class="tab-content">
+      <div role="tabpanel" class="tab-pane active" id="level">
+        <form id="form" class="form">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Logger name</th>
+                <th>Log level</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="logger in loggers">
+                <td>{{logger.name}}</td>
+                <td>{{logger.effectiveLevel}}</td>
+                <td>
+                  <select class="logger" v-model="logger.level">
+                    <option v-for="item in levels" v-bind:value="item">{{item}}</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <input type="reset" value="Reset" class="btn btn-default">
+          <input type="button" value="Save" class="btn btn-primary" v-on:click="save">
+        </form>
+      </div>
+      <div role="tabpanel" class="tab-pane" id="download">
+        <table class="table table-bordered">
+          <thead>
+          <tr>
+            <th>File name</th>
+            <th>Size</th>
+          </tr>
+          </thead>
+          <tbody>
+            <tr v-for="file in files">
+              <td><a v-bind:href="'../logger/files/' + file.name">{{file.name}}</a></td>
+              <td>{{(file.size / 1000).toLocaleString()}}KB</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
   <script>
     var app = new Vue({
-      el: '#form',
+      el: '#app',
       data: {
         loggers: [],
+        files: [],
         levels: [
           null, 'OFF', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'
         ]
+      },
+      filters: {
+        number: function(value){
+          return value.toLocaleString();
+        }
       },
       methods: {
         save: function(event){
@@ -64,7 +94,7 @@
                   'Succeed to save configuration!' +
                   '</div>'
               ));
-              updateTable();
+              updateLogLevelTable();
             },
             error: function(xhr, status, error){
               console.log(error);
@@ -74,11 +104,18 @@
       }
     });
 
-    updateTable();
+    updateLogLevelTable();
+    updateLogFileTable();
 
-    function updateTable() {
+    function updateLogLevelTable() {
       $.get('http://localhost:8080/logger/levels', function (items) {
         app.$data.loggers = items;
+      });
+    }
+
+    function updateLogFileTable() {
+      $.get('http://localhost:8080/logger/files', function (items) {
+        app.$data.files = items;
       });
     }
   </script>

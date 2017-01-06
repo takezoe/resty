@@ -1,5 +1,7 @@
 package com.github.takezoe.resty
 
+import java.nio.file.{Files, Path, Paths}
+
 import ch.qos.logback.classic.{Level, LoggerContext}
 import org.slf4j.impl.StaticLoggerBinder
 
@@ -42,6 +44,23 @@ class LoggerController {
     }
   }
 
+  @Action(method = "GET", path = "/logger/files")
+  def getLogFiles(): Array[LogFileModel] = {
+    Files.list(Paths.get("logs")).map[LogFileModel] { file =>
+      LogFileModel(file.getFileName.toString, Files.size(file))
+    }.toArray { length =>
+      new Array[LogFileModel](length)
+    }
+  }
+
+  @Action(method = "GET", path = "/logger/files/{name}")
+  def downloadLogFile(name: String): java.io.File = {
+    Paths.get("logs", name).toFile match {
+      case file if !file.exists => NotFound()
+      case file => file
+    }
+  }
+
   protected def getLoggerContext(): LoggerContext = {
     val factory = StaticLoggerBinder.getSingleton().getLoggerFactory()
     factory.asInstanceOf[LoggerContext]
@@ -59,3 +78,5 @@ case class LoggerModel(name: String, level: Option[String], effectiveLevel: Stri
 case class LogLevelUpdateRequest(name: String, level: Option[String])
 
 case class LogLevelUpdateRequests(loggers: Seq[LogLevelUpdateRequest])
+
+case class LogFileModel(name: String, size: Long)

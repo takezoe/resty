@@ -163,6 +163,7 @@ trait RestyKernel {
       case x: File => {
         if(response.getContentType == null) {
           response.setContentType("application/octet-stream")
+          response.setHeader("Content-Disposition", "attachment; filename=\"" + x.getName + "\"")
         }
         val in = new FileInputStream(x)
         try {
@@ -183,7 +184,6 @@ trait RestyKernel {
       }
     }
   }
-
 
 }
 
