@@ -37,8 +37,10 @@ class InitializeListener extends ServletContextListener {
     }
 
     // Initialize LogBack dynamic configuration
-    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.DynamicLogBack))){
-      Resty.register(new LoggerController())
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsole))){
+      val dir = StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsoleDir))
+      val file = StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsoleFile))
+      Resty.register(new LoggerController(dir, file))
       context.addServlet("LoggerUIServlet", new LoggerUIServlet())
       context.getServletRegistration("LoggerUIServlet").addMapping("/logger-ui/*")
     }
@@ -57,5 +59,7 @@ object ConfigKeys {
   val ZipkinSampleRate = "resty.zipkin.sample.rate"
   val SwaggerSupport   = "resty.swagger"
   val HystrixSupport   = "resty.hystrix"
-  val DynamicLogBack   = "resty.dynamic-logback"
+  val LogConsole       = "resty.logconsole"
+  val LogConsoleDir    = "resty.logconsole.dir"
+  val LogConsoleFile   = "resty.logconsole.file"
 }

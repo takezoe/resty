@@ -231,9 +231,9 @@ Add following parameters to `web.xml` to enable Zipkin integration:
 </context-param>
 ```
 
-## Dynamic LogBack configuration
+## Log console
 
-You can change log level of LogBack loggers dynamically via Web UI at `http://localhost:8080/logger-ui/`.
+Resty provides a log console at `http://localhost:8080/logger-ui/`. You can change log level of LogBack loggers dynamically, download log files and tail log file on this console.
 
 ![Dynamic LogBack configuration](dynamic-logback.png)
 
@@ -241,7 +241,15 @@ Add a following parameter to `web.xml` to enable dynamic LogBack configuration:
 
 ```xml
 <context-param>
-  <param-name>resty.dynamic-logback</param-name>
+  <param-name>resty.logconsole</param-name>
   <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.logconsole.dir</param-name>
+  <param-value>logs</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.logconsole.file</param-name>
+  <param-value>application.log</param-value>
 </context-param>
 ```

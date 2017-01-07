@@ -1,14 +1,13 @@
 package com.github.takezoe.resty
 
-import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.atomic.AtomicBoolean
+import java.nio.file.{Files, Paths}
 
 import ch.qos.logback.classic.{Level, LoggerContext}
 import org.slf4j.impl.StaticLoggerBinder
 
 import scala.collection.JavaConverters._
 
-class LoggerController {
+class LoggerController(dir: String, file: String) {
 
   @Action(method = "GET", path = "/logger/levels")
   def levels(): Seq[LoggerModel] = {
@@ -47,7 +46,7 @@ class LoggerController {
 
   @Action(method = "GET", path = "/logger/files")
   def getLogFiles(): Array[LogFileModel] = {
-    Files.list(Paths.get("logs")).map[LogFileModel] { file =>
+    Files.list(Paths.get(dir)).map[LogFileModel] { file =>
       LogFileModel(file.getFileName.toString, Files.size(file))
     }.toArray { length =>
       new Array[LogFileModel](length)
@@ -56,7 +55,7 @@ class LoggerController {
 
   @Action(method = "GET", path = "/logger/files/{name}")
   def downloadLogFile(name: String): java.io.File = {
-    Paths.get("logs", name).toFile match {
+    Paths.get(dir, name).toFile match {
       case file if !file.exists => NotFound()
       case file => file
     }
@@ -64,7 +63,7 @@ class LoggerController {
 
   @Action(method = "GET", path = "/logger/tail")
   def tailLogFile(from: Int): Seq[String] = {
-    val path = Paths.get("logs", "application.log")
+    val path = Paths.get(dir, file)
     if(Files.exists(path)){
       val stream = Files.lines(Paths.get("logs", "application.log"))
       stream.skip(from).toArray { length => new Array[String](length) }.toSeq
