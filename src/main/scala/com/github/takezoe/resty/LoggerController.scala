@@ -1,6 +1,7 @@
 package com.github.takezoe.resty
 
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.atomic.AtomicBoolean
 
 import ch.qos.logback.classic.{Level, LoggerContext}
 import org.slf4j.impl.StaticLoggerBinder
@@ -58,6 +59,17 @@ class LoggerController {
     Paths.get("logs", name).toFile match {
       case file if !file.exists => NotFound()
       case file => file
+    }
+  }
+
+  @Action(method = "GET", path = "/logger/tail")
+  def tailLogFile(from: Int): Seq[String] = {
+    val path = Paths.get("logs", "application.log")
+    if(Files.exists(path)){
+      val stream = Files.lines(Paths.get("logs", "application.log"))
+      stream.skip(from).toArray { length => new Array[String](length) }.toSeq
+    } else {
+      Seq.empty
     }
   }
 

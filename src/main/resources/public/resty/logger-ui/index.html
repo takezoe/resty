@@ -14,6 +14,7 @@
     <ul class="nav nav-tabs" role="tablist">
       <li role="presentation" class="active"><a href="#level" aria-controls="level" role="tab" data-toggle="tab">Log level</a></li>
       <li role="presentation"><a href="#download" aria-controls="download" role="tab" data-toggle="tab">Download</a></li>
+      <li role="presentation"><a href="#tail" aria-controls="tail" role="tab" data-toggle="tab">Tail</a></li>
     </ul>
     <div class="tab-content">
       <div role="tabpanel" class="tab-pane active" id="level">
@@ -58,6 +59,9 @@
           </tbody>
         </table>
       </div>
+      <div role="tabpanel" class="tab-pane" id="tail">
+        <textarea id="tailarea" style="width: 100%; height: 400px;" readonly>{{lines}}</textarea>
+      </div>
     </div>
   </div>
   <script>
@@ -65,10 +69,11 @@
       el: '#app',
       data: {
         loggers: [],
-        files: [],
         levels: [
           null, 'OFF', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'
-        ]
+        ],
+        files: [],
+        lines: ''
       },
       filters: {
         number: function(value){
@@ -106,6 +111,8 @@
 
     updateLogLevelTable();
     updateLogFileTable();
+    setTimeout(updateTailTextarea, 1000);
+    var from = 0
 
     function updateLogLevelTable() {
       $.get('http://localhost:8080/logger/levels', function (items) {
@@ -116,6 +123,20 @@
     function updateLogFileTable() {
       $.get('http://localhost:8080/logger/files', function (items) {
         app.$data.files = items;
+      });
+    }
+
+    function updateTailTextarea() {
+      console.log('poll...');
+      $.get('http://localhost:8080/logger/tail?from=' + from, function (items) {
+        if(items.length > 0){
+          app.$data.lines = app.$data.lines + items.join('\n') + '\n';
+          from = from + items.length;
+          // scroll to bottom
+          var textarea = document.getElementById('tailarea');
+          textarea.scrollTop = textarea.scrollHeight;
+        }
+        setTimeout(updateTailTextarea, 1000);
       });
     }
   </script>
