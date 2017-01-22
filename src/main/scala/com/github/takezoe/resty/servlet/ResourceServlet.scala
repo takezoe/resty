@@ -1,8 +1,10 @@
 package com.github.takezoe.resty.servlet
 
+import java.io.InputStream
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import org.apache.commons.io.IOUtils
+import scala.util.control.Exception
 
 /**
  * A base class for servlets that provide resources on the classpath as web contents.
@@ -13,15 +15,26 @@ abstract class ResourceServlet(basePath: String) extends HttpServlet {
     val resourcePath = request.getRequestURI.substring(request.getServletPath.length)
     val path = if(resourcePath.endsWith("/")) resourcePath + "index.html" else resourcePath
 
-    val in = Thread.currentThread.getContextClassLoader.getResourceAsStream(basePath + path)
+    val in = getResource(path)
     if(in != null){
-      val content = IOUtils.toByteArray(in)
-      val out = response.getOutputStream
+      try {
+        val content = IOUtils.toByteArray(in)
+        val out = response.getOutputStream
 
-      response.setContentType(getContentType(path))
-      response.setContentLength(content.length)
-      out.write(content)
+        response.setContentType(getContentType(path))
+        response.setContentLength(content.length)
+        out.write(content)
+
+      } finally {
+        Exception.ignoring(classOf[Exception]){
+          in.close()
+        }
+      }
     }
+  }
+
+  protected def getResource(path: String): InputStream = {
+    Thread.currentThread.getContextClassLoader.getResourceAsStream(basePath + path)
   }
 
   protected def getContentType(path: String): String = {
