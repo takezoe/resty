@@ -283,7 +283,7 @@ Then import JavaScript library as following:
 <script src="/public/assets/jquery.min.js" type='text/javascript'></script>
 ```
 
-## Hosting static files
+## Static files hosting
 
 Resty is including some base servlets to host static files. You can provide a frontend application through Resty application from the classpath or the file system by defining following servlet based on these classes.
 
