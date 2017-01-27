@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "io.zipkin.reporter"           %  "zipkin-sender-okhttp3"          % "0.6.9",
   "org.apache.httpcomponents"    %  "httpclient"                     % "4.5.2",
   "commons-io"                   %  "commons-io"                     % "2.5",
+  "org.webjars"                  %  "webjars-locator"                % "0.32",
   "ch.qos.logback"               %  "logback-classic"                % "1.1.7",
   "javax.servlet"                %  "javax.servlet-api"              % "3.0.1" % "provided",
   "org.scalatest"                %% "scalatest"                      % "3.0.1" % "test"

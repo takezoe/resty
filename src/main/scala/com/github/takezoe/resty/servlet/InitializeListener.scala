@@ -44,6 +44,12 @@ class InitializeListener extends ServletContextListener {
       context.addServlet("LoggerUIServlet", new LoggerUIServlet())
       context.getServletRegistration("LoggerUIServlet").addMapping("/logger-ui/*")
     }
+
+    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsSupport))){
+      val path = StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsPath))
+      context.addServlet("WebJarsServlet", new WebJarsServlet())
+      context.getServletRegistration("WebJarsServlet").addMapping(path)
+    }
   }
 
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
@@ -62,4 +68,6 @@ object ConfigKeys {
   val LogConsole       = "resty.logconsole"
   val LogConsoleDir    = "resty.logconsole.dir"
   val LogConsoleFile   = "resty.logconsole.file"
+  val WebJarsSupport   = "resty.webjars"
+  val WebJarsPath      = "resty.webjars.path"
 }
