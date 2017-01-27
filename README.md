@@ -235,7 +235,7 @@ Add following parameters to `web.xml` to enable Zipkin integration:
 
 Resty provides a log console at `http://localhost:8080/logger-ui/`. You can change log level of LogBack loggers dynamically, download log files and tail a log file on this console.
 
-![Dynamic LogBack configuration](dynamic-logback.png)
+![Log console](logconsole.png)
 
 Add a following parameter to `web.xml` to enable the log console:
 
