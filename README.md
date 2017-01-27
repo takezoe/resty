@@ -171,7 +171,7 @@ When the parameter value is invalid, Resty responds the following response with 
 
 ## Swagger integration
 
-Resty provides Swagger integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
+Resty provides [Swagger](http://swagger.io/) integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
 
 ![Swagger integration](swagger.png)
 
@@ -186,7 +186,7 @@ Add following parameter to `web.xml` to enable Swagger integration:
 
 ## Hystrix integration
 
-Resty also provides Hystrix integration in default. Metrics are published for each operations. The stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
+Resty also provides [Hystrix](https://github.com/Netflix/Hystrix) integration in default. Metrics are published for each operations. The stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
 
 ![Hystrix integration](hystrix.png)
 
@@ -201,7 +201,7 @@ Add following parameter to `web.xml` to enable Hystrix integration:
 
 ## Zipkin integration
 
-Furthermore, Resty supports Zipkin as well. You can send execution results to the Zipkin server by enabling Zipkin support and using `HttpClientSupport` for calling other APIs.
+Furthermore, Resty supports [Zipkin](http://zipkin.io/) as well. You can send execution results to the Zipkin server by enabling Zipkin support and using `HttpClientSupport` for calling other APIs.
 
 ```scala
 class HelloController extends HttpClientSupport {
@@ -233,11 +233,11 @@ Add following parameters to `web.xml` to enable Zipkin integration:
 
 ## Log console
 
-Resty provides a log console at `http://localhost:8080/logger-ui/`. You can change log level of LogBack loggers dynamically, download log files and tail log file on this console.
+Resty provides a log console at `http://localhost:8080/logger-ui/`. You can change log level of LogBack loggers dynamically, download log files and tail a log file on this console.
 
 ![Dynamic LogBack configuration](dynamic-logback.png)
 
-Add a following parameter to `web.xml` to enable dynamic LogBack configuration:
+Add a following parameter to `web.xml` to enable the log console:
 
 ```xml
 <context-param>
@@ -253,3 +253,48 @@ Add a following parameter to `web.xml` to enable dynamic LogBack configuration:
   <param-value>application.log</param-value>
 </context-param>
 ```
+
+## WebJars support
+
+[WebJars](http://www.webjars.org/) is a cool stuff to integrate frontend libraries with JVM based applications. Resty can host static files that provided by WebJars for frontend applications.
+
+Add a following parameter to `web.xml` to enable WebJars hosting:
+
+```xml
+<context-param>
+  <param-name>resty.wabjars</param-name>
+  <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.wabjars.path</param-name>
+  <param-value>/public/assets/*</param-value>
+</context-param>
+```
+
+You can add WebJars dependencies in your application as following:
+
+```scala
+libraryDependencies += "org.webjars" %  "jquery" % "3.1.1-1"
+```
+
+Then import JavaScript library as following:
+
+```html
+<script src="/public/assets/jquery.min.js" type='text/javascript'></script>
+```
+
+## Hosting static files
+
+Resty is including some base servlets to host static files. You can provide a frontend application through Resty application from the classpath or the file system by defining following servlet based on these classes.
+
+```scala
+// Host static files on the file system
+@WebServlet(name="FileResourceServlet", urlPatterns=Array("/public/*"))
+class MyFileResourceServlet extends FileResourceServlet("src/main/webapp")
+
+// Host static files in the classpath
+@WebServlet(name="ClasspathResourceServlet", urlPatterns=Array("/public/*"))
+class MyClasspathResourceServlet extends ResourceServlet("com/github/resty/sample/public")
+```
+
+
