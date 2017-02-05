@@ -12,7 +12,7 @@ import scala.util.control.Exception
 abstract class ResourceServlet(basePath: String) extends HttpServlet {
 
   protected override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-    val resourcePath = request.getRequestURI.substring(request.getServletPath.length)
+    val resourcePath = request.getRequestURI.substring((request.getContextPath + request.getServletPath).length)
     val path = if(resourcePath.endsWith("/")) resourcePath + "index.html" else resourcePath
 
     val in = getResource(path)

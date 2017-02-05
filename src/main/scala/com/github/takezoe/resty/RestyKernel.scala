@@ -21,7 +21,9 @@ trait RestyKernel {
   private val logger = LoggerFactory.getLogger(classOf[RestyKernel])
 
   protected def processAction(request: HttpServletRequest, response: HttpServletResponse, method: String): Unit = {
-    Resty.findAction(request.getRequestURI, method) match {
+    val path = request.getRequestURI.substring(request.getContextPath.length)
+
+    Resty.findAction(path, method) match {
       case Some((controller, action, pathParams)) => {
         try {
           if(HystrixSupport.isEnabled) {
