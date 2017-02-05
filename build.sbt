@@ -2,7 +2,7 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.8-SNAPSHOT"
+version := "0.0.8"
 
 scalaVersion := "2.12.1"
 
