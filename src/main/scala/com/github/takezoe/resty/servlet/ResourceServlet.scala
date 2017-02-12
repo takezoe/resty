@@ -1,9 +1,11 @@
 package com.github.takezoe.resty.servlet
 
 import java.io.InputStream
+import java.net.URLConnection
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import org.apache.commons.io.IOUtils
+
 import scala.util.control.Exception
 
 /**
@@ -21,7 +23,7 @@ abstract class ResourceServlet(basePath: String) extends HttpServlet {
         val content = IOUtils.toByteArray(in)
         val out = response.getOutputStream
 
-        response.setContentType(getContentType(path))
+        response.setContentType(getContentType(path.toLowerCase))
         response.setContentLength(content.length)
         out.write(content)
 
@@ -44,10 +46,13 @@ abstract class ResourceServlet(basePath: String) extends HttpServlet {
       "text/css; charset=UTF-8"
     } else if(path.endsWith(".js")){
       "text/javascript; charset=UTF-8"
-    } else if(path.endsWith(".png")){
-      "image/png"
     } else {
-      "application/octet-stream"
+      val contentType = URLConnection.guessContentTypeFromName(path)
+      if(contentType == null){
+        "application/octet-stream"
+      } else {
+        contentType
+      }
     }
   }
 
