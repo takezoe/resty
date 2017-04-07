@@ -180,9 +180,9 @@ trait RestyKernel {
         if(response.getContentType == null) {
           response.setContentType("application/json")
         }
-        val writer = response.getWriter
-        writer.println(JsonUtils.serialize(x))
-        writer.flush()
+        val out = response.getOutputStream
+        out.write(JsonUtils.serialize(x).getBytes("UTF-8"))
+        out.flush()
       }
     }
   }
