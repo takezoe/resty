@@ -36,15 +36,6 @@ class InitializeListener extends ServletContextListener {
       context.getServletRegistration("HystrixMetricsStreamServlet").addMapping("/hystrix.stream")
     }
 
-    // Initialize LogBack dynamic configuration
-    if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsole))){
-      val dir = StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsoleDir))
-      val file = StringUtils.trim(context.getInitParameter(ConfigKeys.LogConsoleFile))
-      Resty.register(new LoggerController(dir, file))
-      context.addServlet("LoggerUIServlet", new LoggerUIServlet())
-      context.getServletRegistration("LoggerUIServlet").addMapping("/logger-ui/*")
-    }
-
     if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsSupport))){
       val path = StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsPath))
       context.addServlet("WebJarsServlet", new WebJarsServlet())
@@ -65,9 +56,6 @@ object ConfigKeys {
   val ZipkinSampleRate = "resty.zipkin.sample.rate"
   val SwaggerSupport   = "resty.swagger"
   val HystrixSupport   = "resty.hystrix"
-  val LogConsole       = "resty.logconsole"
-  val LogConsoleDir    = "resty.logconsole.dir"
-  val LogConsoleFile   = "resty.logconsole.file"
   val WebJarsSupport   = "resty.webjars"
   val WebJarsPath      = "resty.webjars.path"
 }

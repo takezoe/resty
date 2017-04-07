@@ -2,25 +2,25 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.8"
+version := "0.0.9-SNAPSHOT"
 
 scalaVersion := "2.12.1"
 
 libraryDependencies ++= Seq(
-  "org.json4s"                   %% "json4s-scalap"                  % "3.5.0",
-  "com.netflix.hystrix"          %  "hystrix-core"                   % "1.5.8",
-  "com.netflix.hystrix"          %  "hystrix-metrics-event-stream"   % "1.5.8",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"           % "2.8.4",
-  "io.swagger"                   %  "swagger-models"                 % "1.5.10",
-  "io.zipkin.brave"              %  "brave-core"                     % "3.16.0",
-  "io.zipkin.brave"              %  "brave-apache-http-interceptors" % "3.16.0",
-  "io.zipkin.brave"              %  "brave-web-servlet-filter"       % "3.16.0",
-  "io.zipkin.reporter"           %  "zipkin-sender-okhttp3"          % "0.6.9",
-  "org.apache.httpcomponents"    %  "httpclient"                     % "4.5.2",
+  "org.json4s"                   %% "json4s-scalap"                  % "3.5.1",
+  "com.netflix.hystrix"          %  "hystrix-core"                   % "1.5.10",
+  "com.netflix.hystrix"          %  "hystrix-metrics-event-stream"   % "1.5.10",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"           % "2.8.8",
+  "io.swagger"                   %  "swagger-models"                 % "1.5.13",
+  "io.zipkin.brave"              %  "brave-core"                     % "3.18.0",
+  "io.zipkin.brave"              %  "brave-apache-http-interceptors" % "3.18.0",
+  "io.zipkin.brave"              %  "brave-web-servlet-filter"       % "3.18.0",
+  "io.zipkin.reporter"           %  "zipkin-sender-okhttp3"          % "0.6.13",
+  "org.apache.httpcomponents"    %  "httpclient"                     % "4.5.3",
   "commons-io"                   %  "commons-io"                     % "2.5",
-  "org.webjars"                  %  "webjars-locator"                % "0.32",
-  "ch.qos.logback"               %  "logback-classic"                % "1.1.7",
-  "javax.servlet"                %  "javax.servlet-api"              % "3.0.1" % "provided",
+  "org.webjars"                  %  "webjars-locator"                % "0.32-1",
+  "ch.qos.logback"               %  "logback-classic"                % "1.2.2",
+  "javax.servlet"                %  "javax.servlet-api"              % "3.1.0" % "provided",
   "org.scalatest"                %% "scalatest"                      % "3.0.1" % "test"
 )
 

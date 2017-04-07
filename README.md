@@ -231,29 +231,6 @@ Add following parameters to `web.xml` to enable Zipkin integration:
 </context-param>
 ```
 
-## Log console
-
-Resty provides a log console at `http://localhost:8080/logger-ui/`. You can change log level of LogBack loggers dynamically, download log files and tail a log file on this console.
-
-![Log console](logconsole.png)
-
-Add a following parameter to `web.xml` to enable the log console:
-
-```xml
-<context-param>
-  <param-name>resty.logconsole</param-name>
-  <param-value>enable</param-value>
-</context-param>
-<context-param>
-  <param-name>resty.logconsole.dir</param-name>
-  <param-value>logs</param-value>
-</context-param>
-<context-param>
-  <param-name>resty.logconsole.file</param-name>
-  <param-value>application.log</param-value>
-</context-param>
-```
-
 ## WebJars support
 
 [WebJars](http://www.webjars.org/) is a cool stuff to integrate frontend libraries with JVM based applications. Resty can host static files that provided by WebJars for frontend applications.
