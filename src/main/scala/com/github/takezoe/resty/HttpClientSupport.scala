@@ -3,8 +3,6 @@ package com.github.takezoe.resty
 import java.util.concurrent.atomic.AtomicReference
 import javax.servlet.ServletContextEvent
 
-import com.github.kristofa.brave.{Brave, Sampler}
-import com.github.kristofa.brave.httpclient.{BraveHttpRequestInterceptor, BraveHttpResponseInterceptor}
 import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
 import org.apache.commons.io.IOUtils
@@ -14,16 +12,19 @@ import org.apache.http.entity.ContentType
 import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import zipkin.reporter.AsyncReporter
 import zipkin.reporter.okhttp3.OkHttpSender
+import brave._
+import brave.sampler._
+import brave.httpclient._
 
 import scala.reflect.ClassTag
 
 object HttpClientSupport {
 
-  private val _brave = new AtomicReference[Brave](null)
+  private val _tracing = new AtomicReference[Tracing](null)
   private val _httpClient = new AtomicReference[CloseableHttpClient](null)
 
-  def brave: Brave = {
-    val instance = _brave.get()
+  def tracing: Tracing = {
+    val instance = _tracing.get()
     if(instance == null){
       throw new IllegalStateException("HttpClientSupport has not been initialized or Zipkin support is disabled.")
     }
@@ -47,22 +48,21 @@ object HttpClientSupport {
       val name = sce.getServletContext.getServletContextName
       val url  = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl))
       val rate = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSampleRate))
-      val builder = new Brave.Builder(name)
+      val builder = Tracing.newBuilder().localServiceName(name)
 
       if(url.nonEmpty){
         val reporter = AsyncReporter.builder(OkHttpSender.create(url.trim)).build()
         builder.reporter(reporter)
       }
+
       if(rate.nonEmpty){
         val sampler = Sampler.create(rate.toFloat)
-        builder.traceSampler(sampler)
+        builder.sampler(sampler)
       }
-      _brave.set(builder.build())
 
-      _httpClient.set(HttpClients.custom()
-        .addInterceptorFirst(BraveHttpRequestInterceptor.create(HttpClientSupport.brave))
-        .addInterceptorFirst(BraveHttpResponseInterceptor.create(HttpClientSupport.brave))
-        .build())
+      _tracing.set(builder.build())
+      _httpClient.set(TracingHttpClientBuilder.create(_tracing.get()).build())
+
     } else {
       _httpClient.set(HttpClients.createDefault())
     }
@@ -72,7 +72,7 @@ object HttpClientSupport {
     if(_httpClient.get() == null){
       throw new IllegalArgumentException("HttpClientSupport is inactive now.")
     }
-    _brave.set(null)
+    _tracing.set(null)
     _httpClient.get().close()
     _httpClient.set(null)
   }
