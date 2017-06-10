@@ -2,12 +2,12 @@ package com.github.takezoe.resty.servlet
 
 import javax.servlet._
 
-import com.github.kristofa.brave.servlet.BraveServletFilter
+import brave.servlet.TracingFilter
 import com.github.takezoe.resty.HttpClientSupport
 
 class ZipkinBraveFilter extends Filter {
 
-  protected val filter = BraveServletFilter.create(HttpClientSupport.brave)
+  protected val filter = TracingFilter.create(HttpClientSupport.tracing)
 
   override def init(filterConfig: FilterConfig): Unit = filter.init(filterConfig)
 
