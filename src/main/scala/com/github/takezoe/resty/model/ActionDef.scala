@@ -8,6 +8,7 @@ case class ActionDef(
   description: String,
   deprecated: Boolean,
   params: Seq[ParamDef],
-  function: Method
+  function: Method,
+  async: Boolean
 )
 

@@ -12,6 +12,7 @@ import io.swagger.models.parameters._
 import io.swagger.models.properties._
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 /**
  * Endpoint that provides Swagger 2.0 JSON.
@@ -184,6 +185,11 @@ class SwaggerController {
         property
       }
     } else if(fieldType == classOf[ActionResult[_]]){
+      ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
+        createSimpleProperty(actionMethod, wrappedType, models)
+      }
+    } else if(fieldType == classOf[Future[_]]){
+      // TODO When wrapped type is ActionResult...?
       ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
         createSimpleProperty(actionMethod, wrappedType, models)
       }

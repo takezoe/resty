@@ -8,6 +8,7 @@ import com.github.takezoe.resty.model.{ActionDef, AppInfo, ControllerDef, ParamD
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 /**
  * Manages all actions information of the application.
@@ -43,7 +44,8 @@ object Resty {
           annotation.description(),
           annotation.deprecated(),
           getParamDefs(method, controllerClass, annotation),
-          method
+          method,
+          method.getReturnType == classOf[Future[_]]
         )))
       }
     }

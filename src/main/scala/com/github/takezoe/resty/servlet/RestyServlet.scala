@@ -5,7 +5,7 @@ import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import com.github.takezoe.resty.RestyKernel
 
-@WebServlet(name="RestyServlet", urlPatterns=Array("/*"))
+@WebServlet(name="RestyServlet", urlPatterns=Array("/*"), asyncSupported = true)
 class RestyServlet extends HttpServlet with RestyKernel {
 
   protected override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {

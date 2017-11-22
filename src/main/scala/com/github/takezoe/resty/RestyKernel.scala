@@ -2,19 +2,18 @@ package com.github.takezoe.resty
 
 import java.io.{File, FileInputStream, InputStream}
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.servlet.ServletContextEvent
+import javax.servlet.AsyncContext
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import com.github.takezoe.resty.model.{ActionDef, ControllerDef, ParamDef}
-import com.github.takezoe.resty.servlet.ConfigKeys
-import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
-import com.netflix.hystrix.HystrixCommand.Setter
-import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
+import com.github.takezoe.resty.util.JsonUtils
 import com.netflix.hystrix.exception.HystrixRuntimeException
-import com.netflix.hystrix.{HystrixCommand, HystrixCommandGroupKey, HystrixCommandKey, HystrixCommandProperties}
 import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
+
+import scala.util.{Failure, Success}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global // TODO
 
 trait RestyKernel {
 
@@ -24,29 +23,20 @@ trait RestyKernel {
     val path = request.getRequestURI.substring(request.getContextPath.length)
 
     Resty.findAction(path, method) match {
-      case Some((controller, action, pathParams)) => {
-        try {
-          if(HystrixSupport.isEnabled) {
-            new HystrixSupport.RestyActionCommand(action.method + " " + action.path,
-              invokeAction(controller, action, pathParams, request, response)
-            ).execute()
+      case Some((controller @ ControllerDef(_, _, instance: ServletAPI), action, pathParams)) => {
+        instance.withValues(request, response){
+          if(action.async){
+            processAsyncAction(request, response, method, controller, action, pathParams)
           } else {
-            invokeAction(controller, action, pathParams, request, response)
+            processSyncAction(request, response, method, controller, action, pathParams)
           }
-        } catch {
-          case e: HystrixRuntimeException =>
-            val cause = e.getCause match {
-              case e: InvocationTargetException => e.getCause
-              case e => e
-            }
-            logger.error("Error during processing action", cause)
-            processResponse(response, ActionResult(500, ErrorModel(Seq(cause.toString))))
-          case e: InvocationTargetException =>
-            logger.error("Error during processing action", e.getCause)
-            processResponse(response, ActionResult(500, ErrorModel(Seq(e.getCause.toString))))
-          case e: Exception =>
-            logger.error("Error during processing action", e)
-            processResponse(response, ActionResult(500, ErrorModel(Seq(e.toString))))
+        }
+      }
+      case Some((controller, action, pathParams)) => {
+        if(action.async){
+          processAsyncAction(request, response, method, controller, action, pathParams)
+        } else {
+          processSyncAction(request, response, method, controller, action, pathParams)
         }
       }
       case None => {
@@ -55,10 +45,73 @@ trait RestyKernel {
     }
   }
 
-  protected def invokeAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
-                             request: HttpServletRequest, response: HttpServletResponse): Unit = {
+  protected def processSyncAction(request: HttpServletRequest, response: HttpServletResponse, method: String,
+      controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]]): Unit = {
     try {
-      setServletAPI(controller, request, response)
+      if(HystrixSupport.isEnabled) {
+        new HystrixSupport.RestyActionCommand(action.method + " " + action.path,
+          invokeAction(controller, action, pathParams, request, response)
+        ).execute()
+      } else {
+        invokeAction(controller, action, pathParams, request, response)
+      }
+    } catch {
+      case e: HystrixRuntimeException =>
+        val cause = e.getCause match {
+          case e: InvocationTargetException => e.getCause
+          case e => e
+        }
+        logger.error("Error during processing action", cause)
+        processResponse(response, ActionResult(500, ErrorModel(Seq(cause.toString))))
+      case e: InvocationTargetException =>
+        logger.error("Error during processing action", e.getCause)
+        processResponse(response, ActionResult(500, ErrorModel(Seq(e.getCause.toString))))
+      case e: Exception =>
+        logger.error("Error during processing action", e)
+        processResponse(response, ActionResult(500, ErrorModel(Seq(e.toString))))
+    }
+  }
+
+  protected def processAsyncAction(request: HttpServletRequest, response: HttpServletResponse, method: String,
+      controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]]): Unit = {
+    val future = invokeAsyncAction(controller, action, pathParams, request, response, request.startAsync(request, response))
+    if(HystrixSupport.isEnabled){
+      new HystrixSupport.RestyAsyncActionCommand(action.method + " " + action.path, future)
+    }
+  }
+
+  protected def invokeAsyncAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
+      request: HttpServletRequest, response: HttpServletResponse, context: AsyncContext): Future[_] = {
+    try {
+      prepareParams(request, pathParams, action.params) match {
+        case Left(errors) =>
+          Future { processResponse(response, BadRequest(ErrorModel(errors))) }
+        case Right(params) =>
+          val future = action.function.invoke(controller.instance, params: _*).asInstanceOf[Future[_]]
+          future.onComplete {
+            case Success(result) =>
+              processResponse(response, result)
+              context.complete()
+            case Failure(error) =>
+              processResponse(response, error)
+              context.complete()
+          }
+          future
+      }
+    } catch {
+      case e: InvocationTargetException => e.getCause match {
+        case e: ActionResultException =>
+          Future { processResponse(response, e.result) }
+        case e => Future.failed(e)
+      }
+      case e: ActionResultException =>
+        Future { processResponse(response, e.result) }
+    }
+  }
+
+  protected def invokeAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
+      request: HttpServletRequest, response: HttpServletResponse): Unit = {
+    try {
       prepareParams(request, pathParams, action.params) match {
         case Left(errors) =>
           processResponse(response, BadRequest(ErrorModel(errors)))
@@ -72,28 +125,6 @@ trait RestyKernel {
         case e => throw e
       }
       case e: ActionResultException => processResponse(response, e.result)
-    } finally {
-      removeServletAPI(controller)
-    }
-  }
-
-  protected def setServletAPI(controller: ControllerDef, request: HttpServletRequest, response: HttpServletResponse): Unit = {
-    controller.instance match {
-      case x: ServletAPI => {
-        x.requestHolder.set(request)
-        x.responseHolder.set(response)
-      }
-      case _ => {}
-    }
-  }
-
-  protected def removeServletAPI(controller: ControllerDef): Unit = {
-    controller.instance match {
-      case x: ServletAPI => {
-        x.requestHolder.remove()
-        x.responseHolder.remove()
-      }
-      case _ => {}
     }
   }
 
@@ -189,32 +220,3 @@ trait RestyKernel {
 
 }
 
-
-object HystrixSupport {
-
-  private val enable = new AtomicBoolean(false)
-
-  class RestyActionCommand(key: String, f: => Unit) extends HystrixCommand[Unit](
-    Setter
-      .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
-      .andCommandKey(HystrixCommandKey.Factory.asKey(key))
-      .andCommandPropertiesDefaults(
-        HystrixCommandProperties.Setter()
-          .withExecutionIsolationStrategy(ExecutionIsolationStrategy.SEMAPHORE)
-          .withExecutionIsolationSemaphoreMaxConcurrentRequests(1000))
-  ) {
-    override def run(): Unit = f
-  }
-
-  def initialize(sce: ServletContextEvent): Unit = {
-    if("enable" == StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.HystrixSupport))){
-      enable.set(true)
-    }
-  }
-
-  def shutdown(sce: ServletContextEvent): Unit = {
-  }
-
-  def isEnabled = enable.get()
-
-}
