@@ -5,7 +5,6 @@ import javax.servlet.ServletContextEvent
 
 import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.StringUtils
-import com.netflix.hystrix.HystrixCommand.Setter
 import com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy
 import com.netflix.hystrix._
 import rx.Observable
@@ -21,8 +20,8 @@ object HystrixSupport {
   /**
    * HistrixCommand implementation for a synchronous action.
    */
-  class RestyActionCommand(key: String, f: => Unit) extends HystrixCommand[Unit](
-    Setter
+  class RestyActionCommand(key: String, f: => AnyRef) extends HystrixCommand[AnyRef](
+    HystrixCommand.Setter
       .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
       .andCommandKey(HystrixCommandKey.Factory.asKey(key))
       .andCommandPropertiesDefaults(
@@ -30,33 +29,38 @@ object HystrixSupport {
           .withExecutionIsolationStrategy(ExecutionIsolationStrategy.SEMAPHORE)
           .withExecutionIsolationSemaphoreMaxConcurrentRequests(1000))
   ) {
-    override def run(): Unit = f
+    override def run(): AnyRef = f
   }
 
   /**
    * HistrixCommand implementation for a asynchronous action.
    */
-  class RestyAsyncActionCommand(key: String, future: Future[_])(implicit ec: ExecutionContext)
-    extends HystrixObservableCommand[Any](HystrixCommandGroupKey.Factory.asKey(key)) {
+  class RestyAsyncActionCommand(key: String, future: Future[AnyRef], ec: ExecutionContext) extends HystrixObservableCommand[AnyRef](
+    HystrixObservableCommand.Setter
+      .withGroupKey(HystrixCommandGroupKey.Factory.asKey("RestyAction"))
+      .andCommandKey(HystrixCommandKey.Factory.asKey(key))
+      .andCommandPropertiesDefaults(
+        HystrixCommandProperties.Setter()
+          .withExecutionIsolationStrategy(ExecutionIsolationStrategy.SEMAPHORE)
+          .withExecutionIsolationSemaphoreMaxConcurrentRequests(1000))
+  ) {
 
-    override def construct(): Observable[Any] = {
-      val channel = ReplaySubject.create[Any]()
+    override def construct(): Observable[AnyRef] = {
+      val channel = ReplaySubject.create[AnyRef]()
 
       future.onComplete {
-        case Success(v) => {
-          println("***** suceess ****")
-          channel.onNext(v)
+        case Success(result) => {
+          channel.onNext(result)
           channel.onCompleted()
         }
-        case Failure(t) => {
-          println("***** failure ****")
-          channel.onError(t)
-          channel.onCompleted()
+        case Failure(error) => {
+          channel.onError(error)
         }
       }(ec)
 
       channel.asObservable()
     }
+
   }
 
 

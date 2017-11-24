@@ -50,13 +50,17 @@ trait RestyKernel {
   protected def processSyncAction(request: HttpServletRequest, response: HttpServletResponse, method: String,
       controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]]): Unit = {
     try {
-      if(HystrixSupport.isEnabled) {
-        new HystrixSupport.RestyActionCommand(action.method + " " + action.path,
+      val result = if(HystrixSupport.isEnabled) {
+        new HystrixSupport.RestyActionCommand(
+          action.method + " " + action.path,
           invokeAction(controller, action, pathParams, request, response)
         ).execute()
       } else {
         invokeAction(controller, action, pathParams, request, response)
       }
+
+      processResponse(response, result)
+
     } catch {
       case e: HystrixRuntimeException =>
         val cause = e.getCause match {
@@ -76,57 +80,61 @@ trait RestyKernel {
 
   protected def processAsyncAction(request: HttpServletRequest, response: HttpServletResponse, method: String,
       controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]]): Unit = {
-    val future = invokeAsyncAction(controller, action, pathParams, request, response, request.startAsync(request, response))
+    val asyncContext = request.startAsync(request, response)
+    val future = invokeAsyncAction(controller, action, pathParams, request, response, asyncContext)
     if(HystrixSupport.isEnabled){
-      new HystrixSupport.RestyAsyncActionCommand(action.method + " " + action.path, future)
+      new HystrixSupport.RestyAsyncActionCommand(action.method + " " + action.path, future, global)
+        .toObservable.subscribe(
+        (result: AnyRef) => {
+          processResponse(response, result)
+          asyncContext.complete()
+        },
+        (error: Throwable) => {
+          val cause = error match {
+            case e: HystrixRuntimeException => e.getCause
+            case e => e
+          }
+          logger.error("Error during processing action", cause)
+          processResponse(response, ActionResult(500, ErrorModel(Seq(cause.toString))))
+          asyncContext.complete()
+        }
+      )
+    } else {
+      future.onComplete {
+        case Success(result) => {
+          processResponse(response, result)
+          asyncContext.complete()
+        }
+        case Failure(error) => {
+          processResponse(response, ActionResult(500, ErrorModel(Seq(error.toString))))
+          asyncContext.complete()
+        }
+      }
     }
   }
 
   protected def invokeAsyncAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
-      request: HttpServletRequest, response: HttpServletResponse, context: AsyncContext): Future[_] = {
+      request: HttpServletRequest, response: HttpServletResponse, context: AsyncContext): Future[AnyRef] = {
     try {
       prepareParams(request, pathParams, action.params) match {
-        case Left(errors) =>
-          Future { processResponse(response, BadRequest(ErrorModel(errors))) }
-        case Right(params) =>
-          val future = action.function.invoke(controller.instance, params: _*).asInstanceOf[Future[_]]
-          future.onComplete {
-            case Success(result) =>
-              processResponse(response, result)
-              context.complete()
-            case Failure(error) =>
-              processResponse(response, error)
-              context.complete()
-          }
-          future
+        case Left(errors)  => Future.successful(BadRequest(ErrorModel(errors)))
+        case Right(params) => action.function.invoke(controller.instance, params: _*).asInstanceOf[Future[AnyRef]]
       }
     } catch {
       case e: InvocationTargetException => e.getCause match {
-        case e: ActionResultException =>
-          Future { processResponse(response, e.result) }
+        case e: ActionResultException => Future.successful(e.result)
         case e => Future.failed(e)
       }
-      case e: ActionResultException =>
-        Future { processResponse(response, e.result) }
+      case e: ActionResultException =>  Future.successful(e.result)
     }
   }
 
   protected def invokeAction(controller: ControllerDef, action: ActionDef, pathParams: Map[String, Seq[String]],
-      request: HttpServletRequest, response: HttpServletResponse): Unit = {
-    try {
-      prepareParams(request, pathParams, action.params) match {
-        case Left(errors) =>
-          processResponse(response, BadRequest(ErrorModel(errors)))
-        case Right(params) =>
-          val result = action.function.invoke(controller.instance, params: _*)
-          processResponse(response, result)
-      }
-    } catch {
-      case e: InvocationTargetException => e.getCause match {
-        case e: ActionResultException => processResponse(response, e.result)
-        case e => throw e
-      }
-      case e: ActionResultException => processResponse(response, e.result)
+      request: HttpServletRequest, response: HttpServletResponse): AnyRef = {
+    prepareParams(request, pathParams, action.params) match {
+      case Left(errors) => BadRequest(ErrorModel(errors))
+      case Right(params) => action.function.invoke(controller.instance, params: _*)
+        action.function.invoke(controller.instance, params: _*)
     }
   }
 
