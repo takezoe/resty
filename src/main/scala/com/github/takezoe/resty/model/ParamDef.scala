@@ -2,6 +2,7 @@ package com.github.takezoe.resty.model
 
 import java.lang.reflect.Method
 
+import com.github.takezoe.resty.model.ParamConverter.DummyConverter
 import com.github.takezoe.resty.util.ReflectionUtils
 
 sealed trait ParamDef {
@@ -13,8 +14,8 @@ sealed trait ParamDef {
 object ParamDef {
 
   def apply(from: String, name: String, description: String, method: Method, index: Int, clazz: Class[_]): ParamDef = {
-    val converter = simpleTypeConverter(name, clazz)
-      .getOrElse {
+    val converter = if(from == "inject") DummyConverter else {
+      simpleTypeConverter(name, clazz).getOrElse {
         if(clazz == classOf[Seq[_]] && isSimpleContainerType(method, index, clazz)) {
           new ParamConverter.SimpleSeqConverter(name, getWrappedTypeConverter(name, method, index))
         } else if(clazz.isArray && isSimpleContainerType(method, index, clazz)) {
@@ -31,12 +32,14 @@ object ParamDef {
           new ParamConverter.JsonConverter(name, clazz)
         }
       }
+    }
 
     from.toLowerCase() match {
       case "query"  => QueryParam(name, description, converter)
       case "path"   => PathParam(name, description, converter)
       case "header" => HeaderParam(name, description, converter)
       case "body"   => BodyParam(name, description, clazz, converter)
+      case "inject" => InjectParam(name, description, clazz, converter)
     }
   }
 
@@ -81,6 +84,7 @@ object ParamDef {
   case class QueryParam(name: String, description: String, converter: ParamConverter) extends ParamDef
   case class HeaderParam(name: String, description: String, converter: ParamConverter) extends ParamDef
   case class BodyParam(name: String, description: String, clazz: Class[_], converter: ParamConverter) extends ParamDef
+  case class InjectParam(name: String, description: String, clazz: Class[_], converter: ParamConverter) extends ParamDef
 
 }
 

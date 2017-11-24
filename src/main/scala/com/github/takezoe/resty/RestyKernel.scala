@@ -18,28 +18,31 @@ import scala.concurrent.ExecutionContext.Implicits.global // TODO
 trait RestyKernel {
 
   private val logger = LoggerFactory.getLogger(classOf[RestyKernel])
+  private val injector = new ParamInjector()
 
   protected def processAction(request: HttpServletRequest, response: HttpServletResponse, method: String): Unit = {
-    val path = request.getRequestURI.substring(request.getContextPath.length)
+    injector.withValues(request, response){
+      val path = request.getRequestURI.substring(request.getContextPath.length)
 
-    Resty.findAction(path, method) match {
-      case Some((controller @ ControllerDef(_, _, instance: ServletAPI), action, pathParams)) if action.async == false => {
-        instance.withValues(request, response){
-          processSyncAction(request, response, method, controller, action, pathParams)
-        }
-      }
-      case Some((controller, action, pathParams)) => {
-        if(action.async){
-          if(controller.instance.isInstanceOf[ServletAPI]){
-            logger.warn(s"${controller.instance.getClass.getName} extends ServletAPI, but it's deprecated.")
+      Resty.findAction(path, method) match {
+        case Some((controller @ ControllerDef(_, _, instance: ServletAPI), action, pathParams)) if action.async == false => {
+          instance.withValues(request, response){
+            processSyncAction(request, response, method, controller, action, pathParams)
           }
-          processAsyncAction(request, response, method, controller, action, pathParams)
-        } else {
-          processSyncAction(request, response, method, controller, action, pathParams)
         }
-      }
-      case None => {
-        processResponse(response, ActionResult(404, ()))
+        case Some((controller, action, pathParams)) => {
+          if(action.async){
+            if(controller.instance.isInstanceOf[ServletAPI]){
+              logger.warn(s"${controller.instance.getClass.getName} extends ServletAPI, but it's deprecated.")
+            }
+            processAsyncAction(request, response, method, controller, action, pathParams)
+          } else {
+            processSyncAction(request, response, method, controller, action, pathParams)
+          }
+        }
+        case None => {
+          processResponse(response, ActionResult(404, ()))
+        }
       }
     }
   }
@@ -140,6 +143,8 @@ trait RestyKernel {
           converter.convert(Seq(request.getHeader(name)))
         case ParamDef.BodyParam(_, _, _, converter) =>
           converter.convert(Seq(IOUtils.toString(request.getInputStream, "UTF-8")))
+        case ParamDef.InjectParam(_, _, clazz, _) =>
+          Right(injector.get(clazz))
       }
     }
 

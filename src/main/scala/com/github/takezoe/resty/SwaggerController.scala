@@ -3,7 +3,7 @@ package com.github.takezoe.resty
 import java.io.{File, InputStream}
 import java.lang.reflect.{Field, Method}
 
-import com.fasterxml.jackson.annotation.{JsonIgnore, JsonIgnoreProperties, JsonProperty}
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
@@ -79,6 +79,7 @@ class SwaggerController {
             if(converter.isInstanceOf[JsonConverter]){
               models.put(clazz.getSimpleName, createModel(action.function, clazz, models))
             }
+          case ParamDef.InjectParam(_, _, _, _) => // Ignore inject parameter
         }
       }
 

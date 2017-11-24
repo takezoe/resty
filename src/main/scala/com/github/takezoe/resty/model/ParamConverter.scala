@@ -189,4 +189,12 @@ object ParamConverter {
     }
   }
 
+  /**
+   * This is a dummy converter for inject parameters.
+   */
+  object DummyConverter extends ParamConverter {
+    override def convert(values: Seq[String]): Either[String, AnyRef] = ???
+    override def parameter(model: Parameter): Parameter = ???
+  }
+
 }
