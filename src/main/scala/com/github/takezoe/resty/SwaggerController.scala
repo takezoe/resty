@@ -3,7 +3,7 @@ package com.github.takezoe.resty
 import java.io.{File, InputStream}
 import java.lang.reflect.{Field, Method}
 
-import com.fasterxml.jackson.annotation.{JsonIgnore, JsonIgnoreProperties, JsonProperty}
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
 import com.github.takezoe.resty.util.ReflectionUtils
@@ -12,6 +12,7 @@ import io.swagger.models.parameters._
 import io.swagger.models.properties._
 
 import scala.collection.mutable
+import scala.concurrent.Future
 
 /**
  * Endpoint that provides Swagger 2.0 JSON.
@@ -78,6 +79,7 @@ class SwaggerController {
             if(converter.isInstanceOf[JsonConverter]){
               models.put(clazz.getSimpleName, createModel(action.function, clazz, models))
             }
+          case ParamDef.InjectParam(_, _, _, _) => // Ignore inject parameter
         }
       }
 
@@ -184,6 +186,11 @@ class SwaggerController {
         property
       }
     } else if(fieldType == classOf[ActionResult[_]]){
+      ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
+        createSimpleProperty(actionMethod, wrappedType, models)
+      }
+    } else if(fieldType == classOf[Future[_]]){
+      // TODO When wrapped type is ActionResult...?
       ReflectionUtils.getWrappedTypeOfMethod(actionMethod).flatMap { wrappedType =>
         createSimpleProperty(actionMethod, wrappedType, models)
       }

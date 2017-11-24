@@ -3,11 +3,14 @@ package com.github.takezoe.resty
 import java.lang.reflect.Method
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
+import javax.servlet.ServletContext
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse, HttpSession}
 
 import com.github.takezoe.resty.model.{ActionDef, AppInfo, ControllerDef, ParamDef}
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 /**
  * Manages all actions information of the application.
@@ -43,7 +46,8 @@ object Resty {
           annotation.description(),
           annotation.deprecated(),
           getParamDefs(method, controllerClass, annotation),
-          method
+          method,
+          method.getReturnType == classOf[Future[_]]
         )))
       }
     }
@@ -81,19 +85,19 @@ object Resty {
 
   protected def paramFrom(from: String, path: String, name: String,
                           actionMethod: Method, index: Int, clazz: Class[_]): String = {
-    val f = if(from.nonEmpty) from else {
-      if(ParamDef.isSimpleType(clazz) || ParamDef.isSimpleContainerType(actionMethod, index, clazz)){
-        if(path.contains(s"{${name}}")) {
+    if(from.nonEmpty) from else {
+      if(ParamDef.isSimpleType(clazz) || ParamDef.isSimpleContainerType(actionMethod, index, clazz)) {
+        if (path.contains(s"{${name}}")) {
           "path"
         } else {
           "query"
         }
+      } else if(ParamInjector.isInjectable(clazz)){
+        "inject"
       } else {
         "body"
       }
     }
-    println(clazz + ": " + f)
-    f
   }
 
   def findAction(path: String, method: String): Option[(ControllerDef, ActionDef, Map[String, Seq[String]])] = {

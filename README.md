@@ -134,15 +134,21 @@ Also following types are supported as the return value of the action method:
 - `Array[Byte]`, `InputStream`, `java.io.File` are responded as `application/octet-stream`
 - `AnyRef` is responded as `application/json`
 - `ActionResult[_]` is responded as specified status, headers and body
+- `Future[_]` is processed asynchronously using `AsyncContext`
 
 ## Servlet API
 
-You can access Servlet API by mix-in `ServletAPI` trait into controller. `HttpServletRequest` is available as `request` and `HttpServletResponse` is available as `response`.
+You can access Servlet API by defining method arguments with following types:
+
+- `HttpServletRequest`
+- `HttpServletResponse`
+- `HttpSession`
+- `ServletContext`
 
 ```scala
-class HelloController extends ServletAPI {
+class HelloController {
   @Action(method = "GET", path = "/hello")
-  def hello(): Message = {
+  def hello(request: HttpServletRequest): Message = {
     val name = request.getParameter("name")
     Message(s"Hello ${name}!")
   }
