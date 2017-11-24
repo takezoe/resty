@@ -23,17 +23,16 @@ trait RestyKernel {
     val path = request.getRequestURI.substring(request.getContextPath.length)
 
     Resty.findAction(path, method) match {
-      case Some((controller @ ControllerDef(_, _, instance: ServletAPI), action, pathParams)) => {
+      case Some((controller @ ControllerDef(_, _, instance: ServletAPI), action, pathParams)) if action.async == false => {
         instance.withValues(request, response){
-          if(action.async){
-            processAsyncAction(request, response, method, controller, action, pathParams)
-          } else {
-            processSyncAction(request, response, method, controller, action, pathParams)
-          }
+          processSyncAction(request, response, method, controller, action, pathParams)
         }
       }
       case Some((controller, action, pathParams)) => {
         if(action.async){
+          if(controller.instance.isInstanceOf[ServletAPI]){
+            logger.warn(s"${controller.instance.getClass.getName} extends ServletAPI, but it's deprecated.")
+          }
           processAsyncAction(request, response, method, controller, action, pathParams)
         } else {
           processSyncAction(request, response, method, controller, action, pathParams)

@@ -2,6 +2,7 @@ package com.github.takezoe.resty
 
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
+@deprecated("Take HttpServletRequest or HttpServletResponse as method parameters instead.", "0.0.12")
 trait ServletAPI {
 
   private[resty] val requestHolder = new ThreadLocal[HttpServletRequest]
