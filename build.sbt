@@ -2,9 +2,9 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.12-SNAPSHOT"
+version := "0.0.12"
 
-scalaVersion := "2.12.1"
+scalaVersion := "2.12.4"
 
 libraryDependencies ++= Seq(
   "org.json4s"                   %% "json4s-scalap"                    % "3.5.2",
