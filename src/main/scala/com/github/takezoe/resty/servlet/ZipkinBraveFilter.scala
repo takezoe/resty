@@ -13,6 +13,6 @@ class ZipkinBraveFilter extends Filter {
 
   override def doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain): Unit = filter.doFilter(request, response, chain)
 
-  override def destroy(): Unit = {}
+  override def destroy(): Unit = filter.destroy()
 
 }
