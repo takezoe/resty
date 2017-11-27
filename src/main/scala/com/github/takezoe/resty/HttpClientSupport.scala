@@ -1,27 +1,28 @@
 package com.github.takezoe.resty
 
+import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicReference
 import javax.servlet.ServletContextEvent
 
 import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
-import org.apache.commons.io.IOUtils
-import org.apache.http.client.entity.EntityBuilder
-import org.apache.http.client.methods.RequestBuilder
-import org.apache.http.entity.ContentType
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClients}
 import zipkin.reporter.AsyncReporter
 import zipkin.reporter.okhttp3.OkHttpSender
 import brave._
 import brave.sampler._
-import brave.httpclient._
+import _root_.okhttp3._
+import brave.okhttp3.TracingInterceptor
 
+import scala.concurrent.{Future, Promise}
 import scala.reflect.ClassTag
 
 object HttpClientSupport {
 
+  val ContentType_JSON = MediaType.parse("application/json; charset=utf-8")
+
   private val _tracing = new AtomicReference[Tracing](null)
-  private val _httpClient = new AtomicReference[CloseableHttpClient](null)
+  private val _httpClient = new AtomicReference[OkHttpClient](null)
 
   def tracing: Tracing = {
     val instance = _tracing.get()
@@ -60,11 +61,20 @@ object HttpClientSupport {
         builder.sampler(sampler)
       }
 
-      _tracing.set(builder.build())
-      _httpClient.set(TracingHttpClientBuilder.create(_tracing.get()).build())
+      val httpTracing = builder.build()
+
+      _tracing.set(httpTracing)
+
+      val client = new OkHttpClient.Builder().dispatcher(new Dispatcher(
+          tracing.currentTraceContext().executorService(new Dispatcher().executorService())
+        ))
+        .addNetworkInterceptor(TracingInterceptor.create(httpTracing))
+        .build()
+
+      _httpClient.set(client)
 
     } else {
-      _httpClient.set(HttpClients.createDefault())
+      _httpClient.set(new OkHttpClient())
     }
   }
 
@@ -73,7 +83,7 @@ object HttpClientSupport {
       throw new IllegalArgumentException("HttpClientSupport is inactive now.")
     }
     _tracing.set(null)
-    _httpClient.get().close()
+    _httpClient.get().dispatcher().executorService().shutdown()
     _httpClient.set(null)
   }
 
@@ -84,68 +94,148 @@ object HttpClientSupport {
  */
 trait HttpClientSupport {
 
-  def httpGet[T](url: String, configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.get(url)
+  def httpGet[T](url: String, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val builder = new Request.Builder().url(url).get()
+
     execute(builder, configurer, c.runtimeClass)
   }
 
-  def httpPost[T](url: String, params: Map[String, String], configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.post(url)
-    params.foreach { case (key, value) => builder.addParameter(key, value) }
+  def httpGetAsync[T](url: String, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val builder = new Request.Builder().url(url).get()
+
+    executeAsync(builder, configurer, c.runtimeClass)
+  }
+
+  def httpPost[T](url: String, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val formBuilder = new FormBody.Builder()
+    params.foreach { case (key, value) => formBuilder.add(key, value) }
+
+    val builder = new Request.Builder().url(url).post(formBuilder.build())
+
     execute(builder, configurer, c.runtimeClass)
   }
 
-  def httpPostJson[T](url: String, doc: AnyRef, configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.post(url)
-    builder.setEntity(EntityBuilder.create()
-      .setBinary(JsonUtils.serialize(doc).getBytes("UTF-8"))
-      .setContentType(ContentType.APPLICATION_JSON)
-      .build())
+  def httpPostAsync[T](url: String, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val formBuilder = new FormBody.Builder()
+    params.foreach { case (key, value) => formBuilder.add(key, value) }
+
+    val builder = new Request.Builder().url(url).post(formBuilder.build())
+
+    executeAsync(builder, configurer, c.runtimeClass)
+  }
+
+  def httpPostJson[T](url: String, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val builder = new Request.Builder().url(url)
+      .post(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
+
     execute(builder, configurer, c.runtimeClass)
   }
 
-  def httpPut[T](url: String, params: Map[String, String], configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.put(url)
-    params.foreach { case (key, value) => builder.addParameter(key, value) }
+  def httpPostJsonAsync[T](url: String, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val builder = new Request.Builder().url(url)
+      .post(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
+
+    executeAsync(builder, configurer, c.runtimeClass)
+  }
+
+  def httpPut[T](url: String, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val formBuilder = new FormBody.Builder()
+    params.foreach { case (key, value) => formBuilder.add(key, value) }
+
+    val builder = new Request.Builder().url(url).put(formBuilder.build())
+
     execute(builder, configurer, c.runtimeClass)
   }
 
-  def httpPutJson[T](url: String, doc: AnyRef, configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.put(url)
-    builder.setEntity(EntityBuilder.create()
-      .setBinary(JsonUtils.serialize(doc).getBytes("UTF-8"))
-      .setContentType(ContentType.APPLICATION_JSON)
-      .build())
+  def httpPutAsync[T](url: String, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val formBuilder = new FormBody.Builder()
+    params.foreach { case (key, value) => formBuilder.add(key, value) }
+
+    val builder = new Request.Builder().url(url).put(formBuilder.build())
+
+    executeAsync(builder, configurer, c.runtimeClass)
+  }
+
+  def httpPutJson[T](url: String, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val builder = new Request.Builder().url(url)
+      .put(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
+
     execute(builder, configurer, c.runtimeClass)
   }
 
-  def httpDelete[T](url: String, configurer: RequestBuilder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    val builder = RequestBuilder.delete(url)
+  def httpPutJsonAsync[T](url: String, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val builder = new Request.Builder().url(url)
+      .put(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
+
+    executeAsync(builder, configurer, c.runtimeClass)
+  }
+
+  def httpDelete[T](url: String, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    val builder = new Request.Builder().url(url).delete()
+
     execute(builder, configurer, c.runtimeClass)
+  }
+
+  def httpDeleteAsync[T](url: String, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    val builder = new Request.Builder().url(url).delete()
+
+    executeAsync(builder, configurer, c.runtimeClass)
   }
 
   protected def httpClient = HttpClientSupport.httpClient
 
-  protected def execute[T](builder: RequestBuilder, configurer: RequestBuilder => Unit, clazz: Class[_]): Either[ErrorModel, T] = {
-    configurer(builder)
+  protected def execute[T](builder: Request.Builder, configurer: Request.Builder => Unit, clazz: Class[_]): Either[ErrorModel, T] = {
     try {
-      val response = httpClient.execute(builder.build())
-      response.getStatusLine.getStatusCode match {
-        case 200 => {
-          val result = if (clazz == classOf[String]) {
-            IOUtils.toString(response.getEntity.getContent, "UTF-8")
-          } else {
-            JsonUtils.deserialize(IOUtils.toString(response.getEntity.getContent, "UTF-8"), clazz)
-          }
-          Right(result.asInstanceOf[T])
-        }
-        case code =>
-          Left(ErrorModel(Seq(s"${builder.getUri.toString} responded status ${response.getStatusLine.getStatusCode}")))
-      }
+      configurer(builder)
+
+      val request = builder.build()
+      val response = httpClient.newCall(request).execute()
+
+      handleResponse(request, response, clazz)
+      
     } catch {
       case e: Exception => Left(ErrorModel(Seq(e.toString)))
     }
   }
+
+  protected def executeAsync[T](builder: Request.Builder, configurer: Request.Builder => Unit, clazz: Class[_]): Future[Either[ErrorModel, T]] = {
+    try {
+      configurer(builder)
+
+      val request = builder.build()
+      val promise = Promise[Either[ErrorModel, T]]()
+
+      httpClient.newCall(request).enqueue(new Callback {
+        override def onFailure(call: Call, e: IOException): Unit = {
+          promise.failure(e)
+        }
+        override def onResponse(call: Call, response: Response): Unit = {
+          promise.success(handleResponse(request, response, clazz))
+        }
+      })
+
+      promise.future
+
+    } catch {
+      case e: Exception => Future.successful(Left(ErrorModel(Seq(e.toString))))
+    }
+  }
+
+  protected def handleResponse[T](request: Request, response: Response, clazz: Class[_]): Either[ErrorModel, T] = {
+    response.code match {
+      case 200 => {
+        val result = if (clazz == classOf[String]) {
+          new String(response.body.bytes, StandardCharsets.UTF_8)
+        } else {
+          JsonUtils.deserialize(new String(response.body.bytes, StandardCharsets.UTF_8), clazz)
+        }
+        Right(result.asInstanceOf[T])
+      }
+      case code =>
+        Left(ErrorModel(Seq(s"${request.url.toString} responded status ${code}")))
+    }
+  }
+
 
 }
 
