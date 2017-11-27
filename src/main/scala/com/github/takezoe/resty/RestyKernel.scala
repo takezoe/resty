@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory
 
 import scala.util.{Failure, Success}
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global // TODO
+
+// TODO This ExecutionContext is used for only processing response in processAsyncAction().
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait RestyKernel {
 
