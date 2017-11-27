@@ -17,9 +17,11 @@ class InitializeListener extends ServletContextListener {
     // Initialize HttpClientSupport support
     HttpClientSupport.initialize(sce)
     if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.ZipkinSupport))){
-      context.addFilter("ZipkinBraveFilter", new ZipkinBraveFilter())
+      context.addFilter("ZipkinBraveFilter", new ZipkinBraveFilter()).setAsyncSupported(true)
       context.getFilterRegistration("ZipkinBraveFilter")
         .addMappingForUrlPatterns(EnumSet.allOf(classOf[DispatcherType]), true, "/*")
+
+
     }
 
     // Initialize Swagger support
@@ -51,11 +53,12 @@ class InitializeListener extends ServletContextListener {
 }
 
 object ConfigKeys {
-  val ZipkinSupport    = "resty.zipkin"
-  val ZipkinServerUrl  = "resty.zipkin.server.url"
-  val ZipkinSampleRate = "resty.zipkin.sample.rate"
-  val SwaggerSupport   = "resty.swagger"
-  val HystrixSupport   = "resty.hystrix"
-  val WebJarsSupport   = "resty.webjars"
-  val WebJarsPath      = "resty.webjars.path"
+  val ZipkinSupport     = "resty.zipkin"
+  val ZipkinServerUrl   = "resty.zipkin.server.url"
+  val ZipkinSampleRate  = "resty.zipkin.sample.rate"
+  val ZipkinServiceName = "resty.zipkin.service.name"
+  val SwaggerSupport    = "resty.swagger"
+  val HystrixSupport    = "resty.hystrix"
+  val WebJarsSupport    = "resty.webjars"
+  val WebJarsPath       = "resty.webjars.path"
 }
