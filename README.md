@@ -214,8 +214,18 @@ class HelloController extends HttpClientSupport {
   @Action(method = "GET", path = "/hello/{id}")
   def hello(id: Int): Message = {
     // Call other API using methods provided by HttpClientSupport
-    val user = httpGet[User](s"http://localhost:8080/user/${id}")
+    val user: User = httpGet[User](s"http://localhost:8080/user/${id}")
     Message(s"Hello ${user.name}!")
+  }
+  
+  @Action(method = "GET", path = "/hello-async/{id}")
+  def helloAsync(id: Int): Future[Message] = {
+    // HttpClientSupport also supports asynchronous communication
+    val future: Future[Either[ErrorModel, User]] = httpGetAsync[User](s"http://localhost:8080/user/${id}")
+    future.map {
+      case Right(user) => Message(s"Hello ${user.name}!")
+      case Left(error) => throw new ActionResultException(InternalServerError(error))
+    }
   }
 }
 ```
@@ -226,6 +236,10 @@ Add following parameters to `web.xml` to enable Zipkin integration:
 <context-param>
   <param-name>resty.zipkin</param-name>
   <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.zipkin.service.name</param-name>
+  <param-value>resty-sample</param-value>
 </context-param>
 <context-param>
   <param-name>resty.zipkin.sample.rate</param-name>
