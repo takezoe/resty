@@ -1,6 +1,7 @@
 package com.github.takezoe.resty
 
 import java.io.IOException
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicReference
 import javax.servlet.ServletContextEvent
@@ -46,10 +47,10 @@ object HttpClientSupport {
     }
 
     if("enable" == StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSupport))){
-      val name = sce.getServletContext.getServletContextName
+      val name = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServiceName))
       val url  = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinServerUrl))
       val rate = StringUtils.trim(sce.getServletContext.getInitParameter(ConfigKeys.ZipkinSampleRate))
-      val builder = Tracing.newBuilder().localServiceName(name)
+      val builder = Tracing.newBuilder().localServiceName(if(name.nonEmpty) name else InetAddress.getLocalHost.getHostAddress)
 
       if(url.nonEmpty){
         val reporter = AsyncReporter.builder(OkHttpSender.create(url.trim)).build()
