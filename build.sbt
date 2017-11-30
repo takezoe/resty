@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   "io.zipkin.brave"              %  "brave"                            % "4.10.0",
   "io.zipkin.brave"              %  "brave-instrumentation-okhttp3"    % "4.10.0",
   "io.zipkin.brave"              %  "brave-instrumentation-servlet"    % "4.10.0",
-  "io.zipkin.reporter"           %  "zipkin-sender-okhttp3"            % "1.1.2",
+  "io.zipkin.reporter2"          %  "zipkin-sender-okhttp3"            % "2.1.4",
   "commons-io"                   %  "commons-io"                       % "2.5",
   "org.webjars"                  %  "webjars-locator"                  % "0.32-1",
   "ch.qos.logback"               %  "logback-classic"                  % "1.2.3",

@@ -8,12 +8,12 @@ import javax.servlet.ServletContextEvent
 
 import com.github.takezoe.resty.servlet.ConfigKeys
 import com.github.takezoe.resty.util.{JsonUtils, StringUtils}
-import zipkin.reporter.AsyncReporter
-import zipkin.reporter.okhttp3.OkHttpSender
+import zipkin2.reporter.AsyncReporter
 import brave._
 import brave.sampler._
 import _root_.okhttp3._
 import brave.okhttp3.TracingInterceptor
+import zipkin2.reporter.okhttp3.OkHttpSender
 
 import scala.concurrent.{Future, Promise}
 import scala.reflect.ClassTag
@@ -54,7 +54,7 @@ object HttpClientSupport {
 
       if(url.nonEmpty){
         val reporter = AsyncReporter.builder(OkHttpSender.create(url.trim)).build()
-        builder.reporter(reporter)
+        builder.spanReporter(reporter)
       }
 
       if(rate.nonEmpty){
