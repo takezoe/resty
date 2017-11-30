@@ -1,21 +1,21 @@
 package com.github.takezoe.resty
 
 import java.lang.reflect.Method
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.{CopyOnWriteArrayList, Executors}
 import java.util.concurrent.atomic.AtomicReference
-import javax.servlet.ServletContext
-import javax.servlet.http.{HttpServletRequest, HttpServletResponse, HttpSession}
 
 import com.github.takezoe.resty.model.{ActionDef, AppInfo, ControllerDef, ParamDef}
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Manages all actions information of the application.
  */
 object Resty {
+
+  val ioExecutionContext = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 
   private val _appInfo = new AtomicReference[AppInfo](AppInfo())
   private val _actions = new CopyOnWriteArrayList[(ControllerDef, ActionDef)]()
