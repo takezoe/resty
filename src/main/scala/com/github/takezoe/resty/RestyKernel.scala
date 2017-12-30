@@ -128,7 +128,6 @@ trait RestyKernel {
     prepareParams(request, pathParams, action.params) match {
       case Left(errors) => BadRequest(ErrorModel(errors))
       case Right(params) => action.function.invoke(controller.instance, params: _*)
-        action.function.invoke(controller.instance, params: _*)
     }
   }
 
