@@ -14,9 +14,6 @@ import org.slf4j.LoggerFactory
 import scala.util.{Failure, Success}
 import scala.concurrent.Future
 
-// TODO This ExecutionContext is used for only processing response in processAsyncAction().
-import scala.concurrent.ExecutionContext.Implicits.global
-
 trait RestyKernel {
 
   private val logger = LoggerFactory.getLogger(classOf[RestyKernel])
@@ -77,7 +74,7 @@ trait RestyKernel {
     val asyncContext = request.startAsync(request, response)
     val future = invokeAsyncAction(controller, action, pathParams, request, response, asyncContext)
     if(HystrixSupport.isEnabled){
-      new HystrixSupport.RestyAsyncActionCommand(action.method + " " + action.path, future, global)
+      new HystrixSupport.RestyAsyncActionCommand(action.method + " " + action.path, future, Resty.ioExecutionContext)
         .toObservable.subscribe(
         (result: AnyRef) => {
           processResponse(response, result)
@@ -103,7 +100,7 @@ trait RestyKernel {
           processResponse(response, ActionResult(500, ErrorModel(Seq(error.toString))))
           asyncContext.complete()
         }
-      }
+      }(Resty.ioExecutionContext)
     }
   }
 
