@@ -223,17 +223,21 @@ trait HttpClientSupport {
   }
 
   protected def handleResponse[T](request: Request, response: Response, clazz: Class[_]): Either[ErrorModel, T] = {
-    response.code match {
-      case 200 => {
-        val result = if (clazz == classOf[String]) {
-          new String(response.body.bytes, StandardCharsets.UTF_8)
-        } else {
-          JsonUtils.deserialize(new String(response.body.bytes, StandardCharsets.UTF_8), clazz)
+    try {
+      response.code match {
+        case 200 => {
+          val result = if (clazz == classOf[String]) {
+            new String(response.body.bytes, StandardCharsets.UTF_8)
+          } else {
+            JsonUtils.deserialize(new String(response.body.bytes, StandardCharsets.UTF_8), clazz)
+          }
+          Right(result.asInstanceOf[T])
         }
-        Right(result.asInstanceOf[T])
+        case code =>
+          Left(ErrorModel(Seq(s"${request.url.toString} responded status ${code}")))
       }
-      case code =>
-        Left(ErrorModel(Seq(s"${request.url.toString} responded status ${code}")))
+    } finally {
+      response.close()
     }
   }
 
