@@ -3,7 +3,7 @@ package com.github.takezoe.resty
 import java.io.IOException
 import java.net.InetAddress
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import javax.servlet.ServletContextEvent
 
 import com.github.takezoe.resty.servlet.ConfigKeys
@@ -124,7 +124,8 @@ trait RequestExecutor {
 
 class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends RequestExecutor {
 
-  @volatile private var disabledTime: Option[Long] = None
+  private val disabledTime = new AtomicReference[Option[Long]](None)
+  private val failureCount = new AtomicInteger(0)
 
   def execute[T](httpClient: OkHttpClient, builder: Request.Builder,
                  configurer: Request.Builder => Unit, clazz: Class[_]): Either[ErrorModel, T] = {
@@ -136,18 +137,34 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
       val request = builder.build()
       val response = withRetry(httpClient, request, config)
 
+      // reset failure counter
+      disabledTime.set(None)
+      failureCount.set(0)
+
       handleResponse(request, response, clazz)
 
     } catch {
-      case e: Exception => Left(ErrorModel(Seq(e.toString)))
+      case e: Exception => {
+        if(config.maxFailure > 0 && failureCount.incrementAndGet() >= config.maxFailure){
+          disabledTime.set(Some(System.currentTimeMillis))
+        }
+        Left(ErrorModel(Seq(e.toString)))
+      }
     }
   }
 
   private def checkWhetherEnabled(): Unit = {
-    disabledTime match {
-      case None => ()
-      case Some(time) if time <= System.currentTimeMillis - config.resetInterval => disabledTime = None
-      case Some(_) => throw new RuntimeException(s"${url} is not available now.")
+    if(config.maxFailure <= 0 || failureCount.get() < config.maxFailure){
+      ()
+    } else {
+      disabledTime.get() match {
+        case None => ()
+        case Some(time) if time <= System.currentTimeMillis - config.resetInterval => {
+          failureCount.set(config.maxFailure - 1)
+          disabledTime.set(None)
+        }
+        case Some(_) => throw new RuntimeException(s"${url} is not available now.")
+      }
     }
   }
 
@@ -160,10 +177,6 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
         case _: Exception if count < config.maxRetry => {
           count = count + 1
           Thread.sleep(config.retryInterval)
-        }
-        case e: Exception => {
-          disabledTime = Some(System.currentTimeMillis)
-          throw e
         }
       }
     }
@@ -181,18 +194,24 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
       val promise = Promise[Either[ErrorModel, T]]()
 
       httpClient.newCall(request).enqueue(new Callback {
-        var count = 0
+        var retryCount = 0
         override def onFailure(call: Call, e: IOException): Unit = {
-          if(count < config.maxRetry){
-            count = count + 1
+          if(retryCount < config.maxRetry){
+            retryCount = retryCount + 1
             Thread.sleep(config.retryInterval) // TODO Don't brock a thread here!
             httpClient.newCall(request)
           } else {
-            disabledTime = Some(System.currentTimeMillis)
+            if(config.maxFailure > 0 && failureCount.incrementAndGet() >= config.maxFailure){
+              disabledTime.set(Some(System.currentTimeMillis))
+            }
             promise.failure(e)
           }
         }
         override def onResponse(call: Call, response: Response): Unit = {
+          // reset failure counter
+          disabledTime.set(None)
+          failureCount.set(0)
+
           promise.success(handleResponse(request, response, clazz))
         }
       })
@@ -205,7 +224,15 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
   }
 }
 
-case class HttpExecutorConfig(maxRetry: Int = 1, retryInterval: Int = 0, resetInterval: Int = 0)
+/**
+ * Configuration of behavior of HttpClient.
+ *
+ * @param maxRetry default is 0 means no retry
+ * @param retryInterval msec. default is 0 means retry immediately
+ * @param maxFailure default is 0 means disabling circuit breaker
+ * @param resetInterval msec. default is 60000
+ */
+case class HttpExecutorConfig(maxRetry: Int = 0, retryInterval: Int = 0, maxFailure: Int = 0, resetInterval: Int = 60000)
 
 /**
  * HTTP client with Zipkin support.
