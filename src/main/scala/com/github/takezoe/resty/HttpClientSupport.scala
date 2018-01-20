@@ -90,7 +90,10 @@ object HttpClientSupport {
 
 }
 
-trait RequestExecutor {
+/**
+ * Base trait for the HTTP request target.
+ */
+trait RequestTarget {
 
   def execute[T](httpClient: OkHttpClient, configurer: (String, Request.Builder) => Unit, clazz: Class[_]): Either[ErrorModel, T]
 
@@ -117,7 +120,10 @@ trait RequestExecutor {
 
 }
 
-class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends RequestExecutor {
+/**
+ * Implementation of [[RequestTarget]] for single url.
+ */
+class SimpleRequestTarget(val url: String, config: HttpClientConfig) extends RequestTarget {
 
   private val disabledTime = new AtomicReference[Option[Long]](None)
   private val failureCount = new AtomicInteger(0)
@@ -167,7 +173,7 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
     }
   }
 
-  private def withRetry(httpClient: OkHttpClient, request: Request, config: HttpExecutorConfig): Response = {
+  private def withRetry(httpClient: OkHttpClient, request: Request, config: HttpClientConfig): Response = {
     var count = 0
     while(true){
       try {
@@ -223,16 +229,19 @@ class SimpleRequestExecutor(val url: String, config: HttpExecutorConfig) extends
   }
 }
 
-class RandomRequestExecutor(val urls: Seq[String], config: HttpExecutorConfig) extends RequestExecutor {
+/**
+ * Implementation of [[RequestTarget]] for multiple urls. This implementation chooses a url from given urls randomly.
+ */
+class RandomRequestTarget(val urls: Seq[String], config: HttpClientConfig) extends RequestTarget {
 
-  private val executors = urls.map(url => new SimpleRequestExecutor(url, config))
+  private val targets = urls.map(url => new SimpleRequestTarget(url, config))
 
-  private def nextExecutor: Option[RequestExecutor] = {
-    val availableExecutors = executors.filter((_.isAvailable))
-    if(availableExecutors.isEmpty){
+  private def nextExecutor: Option[RequestTarget] = {
+    val availableTargets = targets.filter((_.isAvailable))
+    if(availableTargets.isEmpty){
       None
     } else {
-      Some(availableExecutors((scala.math.random * availableExecutors.length).toInt))
+      Some(availableTargets((scala.math.random * availableTargets.length).toInt))
     }
   }
 
@@ -260,33 +269,34 @@ class RandomRequestExecutor(val urls: Seq[String], config: HttpExecutorConfig) e
  * @param maxFailure default is 0 means disabling circuit breaker
  * @param resetInterval msec. default is 60000
  */
-case class HttpExecutorConfig(maxRetry: Int = 0, retryInterval: Int = 0, maxFailure: Int = 0, resetInterval: Int = 60000)
+case class HttpClientConfig(maxRetry: Int = 0, retryInterval: Int = 0, maxFailure: Int = 0, resetInterval: Int = 60000)
 
 /**
  * HTTP client with Zipkin support.
  */
 trait HttpClientSupport {
 
-  implicit def string2target(url: String): SimpleRequestExecutor = new SimpleRequestExecutor(url, HttpExecutorConfig())
+  implicit def string2target(url: String): SimpleRequestTarget = new SimpleRequestTarget(url, HttpClientConfig())
+  implicit def stringSeq2target(urls: Seq[String]): RandomRequestTarget = new RandomRequestTarget(urls, HttpClientConfig())
 
   protected def httpClient = HttpClientSupport.httpClient
 
-  def httpGet[T](executor: RequestExecutor, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpGet[T](target: RequestTarget, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       builder.url(url).get()
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpGetAsync[T](executor: RequestExecutor, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpGetAsync[T](target: RequestTarget, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       builder.url(url).get()
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpPost[T](executor: RequestExecutor, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpPost[T](target: RequestTarget, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       val formBuilder = new FormBody.Builder()
       params.foreach { case (key, value) => formBuilder.add(key, value) }
 
@@ -296,8 +306,8 @@ trait HttpClientSupport {
     }, c.runtimeClass)
   }
 
-  def httpPostAsync[T](executor: RequestExecutor, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpPostAsync[T](target: RequestTarget, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       val formBuilder = new FormBody.Builder()
       params.foreach { case (key, value) => formBuilder.add(key, value) }
 
@@ -307,22 +317,22 @@ trait HttpClientSupport {
     }, c.runtimeClass)
   }
 
-  def httpPostJson[T](executor: RequestExecutor, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpPostJson[T](target: RequestTarget, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       builder.url(url).post(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpPostJsonAsync[T](executor: RequestExecutor, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpPostJsonAsync[T](target: RequestTarget, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       builder.url(url).post(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpPut[T](executor: RequestExecutor, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpPut[T](target: RequestTarget, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       val formBuilder = new FormBody.Builder()
       params.foreach { case (key, value) => formBuilder.add(key, value) }
 
@@ -332,8 +342,8 @@ trait HttpClientSupport {
     }, c.runtimeClass)
   }
 
-  def httpPutAsync[T](executor: RequestExecutor, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpPutAsync[T](target: RequestTarget, params: Map[String, String], configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       val formBuilder = new FormBody.Builder()
       params.foreach { case (key, value) => formBuilder.add(key, value) }
 
@@ -343,29 +353,29 @@ trait HttpClientSupport {
     }, c.runtimeClass)
   }
 
-  def httpPutJson[T](executor: RequestExecutor, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpPutJson[T](target: RequestTarget, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       builder.url(url).put(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpPutJsonAsync[T](executor: RequestExecutor, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpPutJsonAsync[T](target: RequestTarget, doc: AnyRef, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       builder.url(url).put(RequestBody.create(HttpClientSupport.ContentType_JSON, JsonUtils.serialize(doc)))
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpDelete[T](executor: RequestExecutor, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
-    executor.execute(httpClient, (url, builder) => {
+  def httpDelete[T](target: RequestTarget, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Either[ErrorModel, T] = {
+    target.execute(httpClient, (url, builder) => {
       builder.url(url).delete()
       configurer(builder)
     }, c.runtimeClass)
   }
 
-  def httpDeleteAsync[T](executor: RequestExecutor, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
-    executor.executeAsync(httpClient, (url, builder) => {
+  def httpDeleteAsync[T](target: RequestTarget, configurer: Request.Builder => Unit = (builder) => ())(implicit c: ClassTag[T]): Future[Either[ErrorModel, T]] = {
+    target.executeAsync(httpClient, (url, builder) => {
       builder.url(url).delete()
       configurer(builder)
     }, c.runtimeClass)
