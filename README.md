@@ -175,6 +175,47 @@ When the parameter value is invalid, Resty responds the following response with 
 }
 ```
 
+## HTTP client
+
+`HttpClientSupport` trait offers methods to send HTTP request. You can call other Web APIs easily using these methods.
+
+```scala
+class HelloController extends HttpClientSupport {
+  @Action(method = "GET", path = "/hello/{id}")
+  def hello(id: Int): Message = {
+    // Call other API using methods provided by HttpClientSupport
+    val user: User = httpGet[User](s"http://localhost:8080/user/${id}")
+    Message(s"Hello ${user.name}!")
+  }
+  
+  @Action(method = "GET", path = "/hello-async/{id}")
+  def helloAsync(id: Int): Future[Message] = {
+    // HttpClientSupport also supports asynchronous communication
+    val future: Future[Either[ErrorModel, User]] = httpGetAsync[User](s"http://localhost:8080/user/${id}")
+    future.map {
+      case Right(user) => Message(s"Hello ${user.name}!")
+      case Left(error) => throw new ActionResultException(InternalServerError(error))
+    }
+  }
+}
+```
+
+These methods have retrying ability and circuit breaker. You can configure these behavior by defining `HttpClientConfig` as an implicit value.
+
+```scala
+class HelloController extends HttpClientSupport {
+
+  implicit override val httpClientConfig = HttpClientConfig(
+    maxRetry      = 5,     // max number of retry. default is 0 (no retry)
+    retryInterval = 500,   // interval of retry (msec). default is 0 (retry immediately)
+    maxFailure    = 3,     // max number until open circuit breaker. default is 0 (disabling circuit breaker)
+    resetInterval = 60000  // interval to reset closed circuit breaker (msec). default is 60000
+  )
+  
+  ...
+}
+```
+
 ## Swagger integration
 
 Resty provides [Swagger](http://swagger.io/) integration in default. Swagger JSON is provided at `http://localhost:8080/swagger.json` and also Swagger UI is available at `http://localhost:8080/swagger-ui/`.
@@ -208,27 +249,6 @@ Add following parameter to `web.xml` to enable Hystrix integration:
 ## Zipkin integration
 
 Furthermore, Resty supports [Zipkin](http://zipkin.io/) as well. You can send execution results to the Zipkin server by enabling Zipkin support and using `HttpClientSupport` for calling other APIs.
-
-```scala
-class HelloController extends HttpClientSupport {
-  @Action(method = "GET", path = "/hello/{id}")
-  def hello(id: Int): Message = {
-    // Call other API using methods provided by HttpClientSupport
-    val user: User = httpGet[User](s"http://localhost:8080/user/${id}")
-    Message(s"Hello ${user.name}!")
-  }
-  
-  @Action(method = "GET", path = "/hello-async/{id}")
-  def helloAsync(id: Int): Future[Message] = {
-    // HttpClientSupport also supports asynchronous communication
-    val future: Future[Either[ErrorModel, User]] = httpGetAsync[User](s"http://localhost:8080/user/${id}")
-    future.map {
-      case Right(user) => Message(s"Hello ${user.name}!")
-      case Left(error) => throw new ActionResultException(InternalServerError(error))
-    }
-  }
-}
-```
 
 Add following parameters to `web.xml` to enable Zipkin integration:
 
