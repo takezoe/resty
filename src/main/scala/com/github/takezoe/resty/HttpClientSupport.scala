@@ -276,8 +276,9 @@ case class HttpClientConfig(maxRetry: Int = 0, retryInterval: Int = 0, maxFailur
  */
 trait HttpClientSupport {
 
-  implicit def string2target(url: String): SimpleRequestTarget = new SimpleRequestTarget(url, HttpClientConfig())
-  implicit def stringSeq2target(urls: Seq[String]): RandomRequestTarget = new RandomRequestTarget(urls, HttpClientConfig())
+  implicit def config: HttpClientConfig = HttpClientConfig()
+  implicit def string2target(url: String)(implicit config: HttpClientConfig): SimpleRequestTarget = new SimpleRequestTarget(url, config)
+  implicit def stringSeq2target(urls: Seq[String])(implicit config: HttpClientConfig): RandomRequestTarget = new RandomRequestTarget(urls, config)
 
   protected def httpClient = HttpClientSupport.httpClient
 
