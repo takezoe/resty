@@ -158,7 +158,7 @@ class SimpleRequestTarget(val url: String, config: HttpClientConfig) extends Req
     }
   }
 
-  private def checkWhetherEnabled(): Unit = {
+  protected def checkWhetherEnabled(): Unit = {
     if(config.maxFailure <= 0 || failureCount.get() < config.maxFailure){
       ()
     } else {
@@ -173,7 +173,7 @@ class SimpleRequestTarget(val url: String, config: HttpClientConfig) extends Req
     }
   }
 
-  private def withRetry(httpClient: OkHttpClient, request: Request, config: HttpClientConfig): Response = {
+  protected def withRetry(httpClient: OkHttpClient, request: Request, config: HttpClientConfig): Response = {
     var count = 0
     while(true){
       try {
@@ -236,7 +236,7 @@ class RandomRequestTarget(val urls: Seq[String], config: HttpClientConfig) exten
 
   private val targets = urls.map(url => new SimpleRequestTarget(url, config))
 
-  private def nextExecutor: Option[RequestTarget] = {
+  protected def nextTarget: Option[RequestTarget] = {
     val availableTargets = targets.filter((_.isAvailable))
     if(availableTargets.isEmpty){
       None
@@ -246,15 +246,15 @@ class RandomRequestTarget(val urls: Seq[String], config: HttpClientConfig) exten
   }
 
   override def execute[T](httpClient: OkHttpClient, configurer: (String, Request.Builder) => Unit, clazz: Class[_]): Either[ErrorModel, T] = {
-    nextExecutor match {
-      case Some(executor) => executor.execute(httpClient, configurer, clazz)
+    nextTarget match {
+      case Some(target) => target.execute(httpClient, configurer, clazz)
       case None => Left(ErrorModel(Seq("No available url!")))
     }
   }
 
   override def executeAsync[T](httpClient: OkHttpClient, configurer: (String, Request.Builder) => Unit, clazz: Class[_]): Future[Either[ErrorModel, T]] = {
-    nextExecutor match {
-      case Some(executor) => executor.executeAsync(httpClient, configurer, clazz)
+    nextTarget match {
+      case Some(target) => target.executeAsync(httpClient, configurer, clazz)
       case None => Future.successful(Left(ErrorModel(Seq("No available url!"))))
     }
   }
