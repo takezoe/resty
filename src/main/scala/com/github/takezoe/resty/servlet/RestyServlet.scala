@@ -34,14 +34,10 @@ class RestyServlet extends HttpServlet with RestyKernel {
     val request = req.asInstanceOf[HttpServletRequest]
     val response = res.asInstanceOf[HttpServletResponse]
 
-    if(CORSSupport.isCORSRequest(request)){
-      CORSSupport.getAllowedOrigin(request).foreach { origin =>
-        if(CORSSupport.isPreflightRequest(request)){
-          CORSSupport.setCORSResponseHeaders(response, true, origin)
-          return
-        } else {
-          CORSSupport.setCORSResponseHeaders(response, false, origin)
-        }
+    CORSSupport.processCORSRequest(request).foreach { allowed =>
+      CORSSupport.setCORSResponseHeaders(response, allowed)
+      if(allowed.isPreflight){
+        return
       }
     }
 

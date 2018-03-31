@@ -67,8 +67,8 @@ object ConfigKeys {
   val WebJarsPath          = "resty.webjars.path"
   val CORSSupport          = "resty.cors"
   val CORSAllowedOrigins   = "resty.cors.allowedOrigins"
-//  val CORSAllowedMethods   = "resty.cors.allowedMethods"
-//  val CORSAllowedHeaders   = "resty.cors.allowedHeaders"
+  val CORSAllowedMethods   = "resty.cors.allowedMethods"
+  val CORSAllowedHeaders   = "resty.cors.allowedHeaders"
   val CORSPreflightMaxAge  = "resty.cors.preflightMaxAge"
   val CORSAllowCredentials = "resty.cors.allowCredentials"
 }
