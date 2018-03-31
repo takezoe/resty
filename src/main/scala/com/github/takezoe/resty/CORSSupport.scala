@@ -72,7 +72,7 @@ object CORSSupport {
   }
 
   def processCORSRequest(request: HttpServletRequest): Option[CORSInfo] = {
-    val preflight = request.getMethod == "OPTION" && request.getHeader("Access-Control-Request-Method") != null
+    val isPreflight = request.getMethod == "OPTION" && request.getHeader("Access-Control-Request-Method") != null
 
     def _getAllowedOrigin: Option[String] =
       if(allowCredentials.get() == false && allowedOrigins.get.contains("*")){
@@ -82,7 +82,7 @@ object CORSSupport {
       } else None
 
     def _getAllowedMethods: Option[Seq[String]] = {
-      val method = if(preflight){
+      val method = if(isPreflight){
         request.getHeader("Access-Control-Request-Method")
       } else {
         request.getMethod
@@ -94,7 +94,7 @@ object CORSSupport {
     }
 
     def _getAllowedHeaders: Option[Seq[String]] = {
-      val headers = if(preflight){
+      val headers = if(isPreflight){
         request.getHeader("Access-Control-Request-Headers").split(",").map(_.trim).toSeq
       } else {
         request.getHeaderNames.asScala
@@ -105,7 +105,7 @@ object CORSSupport {
         (header == "CONTENT-TYPE" && SimpleContentTypes.contains(request.getContentType)) ||
         allowedHeaders.get().contains(header)
       }){
-        Some(request.getHeader("Access-Control-Request-Headers").split(", ").map(_.trim))
+        Some(Option(request.getHeader("Access-Control-Request-Headers")).map(_.split(", ").map(_.trim).toSeq).getOrElse(Nil))
       } else None
     }
 
@@ -114,7 +114,7 @@ object CORSSupport {
         origin  <- _getAllowedOrigin
         methods <- _getAllowedMethods
         headers <- _getAllowedHeaders
-      } yield CORSInfo(origin, methods, headers, preflight)
+      } yield CORSInfo(origin, methods, headers, isPreflight)
     } else None
   }
 
@@ -126,8 +126,12 @@ object CORSSupport {
       }
       if(corsInfo.isPreflight && preflightMaxAge.get() > 0){
         response.setHeader("Access-Control-Max-Age", preflightMaxAge.get().toString)
-        response.setHeader("Access-Control-Allow-Methods", corsInfo.allowedMethods.mkString(", "))
-        response.setHeader("Access-Control-Allow-Headers", corsInfo.allowedHeaders.mkString(", "))
+        if(corsInfo.allowedMethods.nonEmpty){
+          response.setHeader("Access-Control-Allow-Methods", corsInfo.allowedMethods.mkString(", "))
+        }
+        if(corsInfo.allowedHeaders.nonEmpty){
+          response.setHeader("Access-Control-Allow-Headers", corsInfo.allowedHeaders.mkString(", "))
+        }
       }
     }
   }
