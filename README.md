@@ -314,4 +314,41 @@ class MyFileResourceServlet extends FileResourceServlet("src/main/webapp")
 class MyClasspathResourceServlet extends ResourceServlet("com/github/resty/sample/public")
 ```
 
+## CORS support
 
+CORS support can be enabled by adding following parameters to `web.xml`:
+
+```xml
+<context-param>
+  <param-name>resty.cors</param-name>
+  <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowedOrigins</param-name>
+  <param-value>http://localhost:8080</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowedMethods</param-name>
+  <param-value>GET, POST</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowedHeaders</param-name>
+  <param-value>Content-Type</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowCredentials</param-name>
+  <param-value>true</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.preflightMaxAge</param-name>
+  <param-value>1800</param-value>
+</context-param>
+```
+
+Description about optional parameters:
+
+- `resty.cors.allowedOrigins`: Comma separated list of hosts and ports which will be allowed to make cross-origin requests (default is `*`).
+- `resty.cors.allowedMethods`: Comma separated list of HTTP methods will be allowed (default is `GET, POST, PUT, DELETE`).
+- `resty.cors.allowedHeaders`: Comma separated list of allowed HTTP headers (most headers are allowed in default).
+- `resty.cors.allowCredentials`: Set this parameter to true to allow cookies in CORS requests (default is `false`).
+- `resty.cors.preflightMaxAge`: Number of seconds that preflight request can be cached in the client (default is `0`).

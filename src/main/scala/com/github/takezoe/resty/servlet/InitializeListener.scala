@@ -38,11 +38,15 @@ class InitializeListener extends ServletContextListener {
       context.getServletRegistration("HystrixMetricsStreamServlet").addMapping("/hystrix.stream")
     }
 
+    // Initialize WebJars support
     if("enable" == StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsSupport))){
       val path = StringUtils.trim(context.getInitParameter(ConfigKeys.WebJarsPath))
       context.addServlet("WebJarsServlet", new WebJarsServlet())
       context.getServletRegistration("WebJarsServlet").addMapping(path)
     }
+
+    // Initialize CORS support
+    CORSSupport.initialize(sce)
   }
 
   override def contextDestroyed(sce: ServletContextEvent): Unit = {
@@ -53,12 +57,18 @@ class InitializeListener extends ServletContextListener {
 }
 
 object ConfigKeys {
-  val ZipkinSupport     = "resty.zipkin"
-  val ZipkinServerUrl   = "resty.zipkin.server.url"
-  val ZipkinSampleRate  = "resty.zipkin.sample.rate"
-  val ZipkinServiceName = "resty.zipkin.service.name"
-  val SwaggerSupport    = "resty.swagger"
-  val HystrixSupport    = "resty.hystrix"
-  val WebJarsSupport    = "resty.webjars"
-  val WebJarsPath       = "resty.webjars.path"
+  val ZipkinSupport        = "resty.zipkin"
+  val ZipkinServerUrl      = "resty.zipkin.server.url"
+  val ZipkinSampleRate     = "resty.zipkin.sample.rate"
+  val ZipkinServiceName    = "resty.zipkin.service.name"
+  val SwaggerSupport       = "resty.swagger"
+  val HystrixSupport       = "resty.hystrix"
+  val WebJarsSupport       = "resty.webjars"
+  val WebJarsPath          = "resty.webjars.path"
+  val CORSSupport          = "resty.cors"
+  val CORSAllowedOrigins   = "resty.cors.allowedOrigins"
+  val CORSAllowedMethods   = "resty.cors.allowedMethods"
+  val CORSAllowedHeaders   = "resty.cors.allowedHeaders"
+  val CORSPreflightMaxAge  = "resty.cors.preflightMaxAge"
+  val CORSAllowCredentials = "resty.cors.allowCredentials"
 }
