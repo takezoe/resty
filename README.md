@@ -314,4 +314,29 @@ class MyFileResourceServlet extends FileResourceServlet("src/main/webapp")
 class MyClasspathResourceServlet extends ResourceServlet("com/github/resty/sample/public")
 ```
 
+## CORS support
 
+CORS support can be enabled by adding following parameters to `web.xml`:
+
+```xml
+<context-param>
+  <param-name>resty.cors</param-name>
+  <param-value>enable</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowedOrigins</param-name>
+  <param-value>http://localhost:8080</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.allowCredentials</param-name>
+  <param-value>true</param-value>
+</context-param>
+<context-param>
+  <param-name>resty.cors.preflightMaxAge</param-name>
+  <param-value>10</param-value>
+</context-param>
+```
+
+- `resty.cors.allowedOrigins`: Comma separated list of hosts and ports which will be allowed to make cross-origin requests (default is `*`).
+- `resty.cors.allowCredentials`: Set this parameter to true to allow cookies in CORS requests (default is `false`).
+- `resty.cors.preflightMaxAge`: Number of seconds that preflight request can be cached in the client (default is `0`).
