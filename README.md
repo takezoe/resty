@@ -1,4 +1,4 @@
-Resty [![Build Status](https://travis-ci.org/takezoe/resty.svg?branch=master)](https://travis-ci.org/takezoe/resty)
+Resty [![Build Status](https://travis-ci.org/takezoe/resty.svg?branch=master)](https://travis-ci.org/takezoe/resty) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.takezoe/resty_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.takezoe/resty_2.12)
 ========
 
 Super easy REST API framework for Scala
