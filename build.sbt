@@ -4,24 +4,24 @@ organization := "com.github.takezoe"
 
 version := "0.0.17"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 libraryDependencies ++= Seq(
-  "org.json4s"                   %% "json4s-scalap"                    % "3.5.2",
+  "org.json4s"                   %% "json4s-scalap"                    % "3.5.4",
   "com.netflix.hystrix"          %  "hystrix-core"                     % "1.5.12",
   "com.netflix.hystrix"          %  "hystrix-metrics-event-stream"     % "1.5.12",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"             % "2.8.8",
-  "com.squareup.okhttp3"         %  "okhttp"                           % "3.9.1",
-  "io.swagger"                   %  "swagger-models"                   % "1.5.13",
-  "io.zipkin.brave"              %  "brave"                            % "4.10.0",
-  "io.zipkin.brave"              %  "brave-instrumentation-okhttp3"    % "4.10.0",
-  "io.zipkin.brave"              %  "brave-instrumentation-servlet"    % "4.10.0",
-  "io.zipkin.reporter2"          %  "zipkin-sender-okhttp3"            % "2.1.4",
-  "commons-io"                   %  "commons-io"                       % "2.5",
-  "org.webjars"                  %  "webjars-locator"                  % "0.32-1",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"             % "2.9.5",
+  "com.squareup.okhttp3"         %  "okhttp"                           % "3.10.0",
+  "io.swagger"                   %  "swagger-models"                   % "1.5.19",
+  "io.zipkin.brave"              %  "brave"                            % "4.19.2",
+  "io.zipkin.brave"              %  "brave-instrumentation-okhttp3"    % "4.19.2",
+  "io.zipkin.brave"              %  "brave-instrumentation-servlet"    % "4.19.2",
+  "io.zipkin.reporter2"          %  "zipkin-sender-okhttp3"            % "2.6.0",
+  "commons-io"                   %  "commons-io"                       % "2.6",
+  "org.webjars"                  %  "webjars-locator"                  % "0.34",
   "ch.qos.logback"               %  "logback-classic"                  % "1.2.3",
   "javax.servlet"                %  "javax.servlet-api"                % "3.1.0" % "provided",
-  "org.scalatest"                %% "scalatest"                        % "3.0.3" % "test"
+  "org.scalatest"                %% "scalatest"                        % "3.0.5" % "test"
 )
 
 scalacOptions := Seq("-deprecation")
