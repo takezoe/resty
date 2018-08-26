@@ -231,6 +231,12 @@ Add following parameter to `web.xml` to enable Swagger integration:
 </context-param>
 ```
 
+By enabling [runtime-scaladoc-reader](https://github.com/takezoe/runtime-scaladoc-reader) plugin in your project, Scaladoc of controller classes is reflected to Swagger JSON. For example, Scaladoc of the controller class is used as the tag description, and Scaladoc of the method is used as the operation description, the parameter description and the response description.
+
+```scala
+addCompilerPlugin("com.github.takezoe" %% "runtime-scaladoc-reader" % "1.0.1")
+```
+
 ## Hystrix integration
 
 Resty also provides [Hystrix](https://github.com/Netflix/Hystrix) integration in default. Metrics are published for each operations. The stream endpoint is available at `http://localhost:8080/hystrix.stream`. Register this endpoint to the Hystrix dashboard.
