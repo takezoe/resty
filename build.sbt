@@ -7,7 +7,7 @@ version := "0.0.18-SNAPSHOT"
 scalaVersion := "2.12.6"
 
 libraryDependencies ++= Seq(
-  "com.github.takezoe"           %% "runtime-scaladoc-reader"          % "1.0.0",
+  "com.github.takezoe"           %% "runtime-scaladoc-reader"          % "1.0.1",
   "org.json4s"                   %% "json4s-scalap"                    % "3.5.4",
   "com.netflix.hystrix"          %  "hystrix-core"                     % "1.5.12",
   "com.netflix.hystrix"          %  "hystrix-metrics-event-stream"     % "1.5.12",
