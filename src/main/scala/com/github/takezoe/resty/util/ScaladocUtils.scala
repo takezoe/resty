@@ -6,23 +6,45 @@ import scala.collection.mutable.ListBuffer
 
 object ScaladocUtils {
 
-  def getScaladoc(clazz: Class[_]): Option[String] = {
+  def getScaladoc(clazz: Class[_]): Option[Scaladoc] = {
     val scaladoc = clazz.getAnnotation(classOf[com.github.takezoe.scaladoc.Scaladoc])
     if(scaladoc != null){
-      Some(scaladoc.value())
+      Some(parseScaladoc(scaladoc.value()))
     } else {
       None
     }
   }
 
-  def getScaladoc(method: Method): Option[String] = {
+  def getScaladoc(method: Method): Option[Scaladoc] = {
     val scaladoc = method.getAnnotation(classOf[com.github.takezoe.scaladoc.Scaladoc])
     if(scaladoc != null){
-      Some(scaladoc.value())
+      Some(parseScaladoc(scaladoc.value()))
     } else {
       None
     }
   }
+
+  def isDeprecated(method: Method, scaladoc: Option[Scaladoc]): Boolean = {
+    if(method.getAnnotation(classOf[Deprecated]) != null){
+      true
+    } else {
+      scaladoc.map { scaladoc =>
+        scaladoc.tags.exists(_.name == "@deprecated")
+      }.getOrElse(false)
+    }
+  }
+
+  def getParamDescription(name: String, scaladoc: Option[Scaladoc]): Option[String] = for {
+    doc  <- scaladoc
+    tag  <- doc.tags.find(tag => tag.name == "@param" && tag.paramName.contains(name))
+    desc <- tag.paramDescription
+  } yield desc
+
+  def getReturnDescription(scaladoc: Option[Scaladoc]): Option[String] = for {
+    doc  <- scaladoc
+    tag  <- doc.tags.find(_.name == "@return")
+    desc <- tag.description
+  } yield desc
 
   def parseScaladoc(scaladoc: String): Scaladoc = {
     val sb = new StringBuilder()

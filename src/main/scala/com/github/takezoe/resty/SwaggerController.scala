@@ -6,7 +6,7 @@ import java.lang.reflect.{Field, Method}
 import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import com.github.takezoe.resty.model.ParamConverter.JsonConverter
 import com.github.takezoe.resty.model.ParamDef
-import com.github.takezoe.resty.util.ReflectionUtils
+import com.github.takezoe.resty.util.{ReflectionUtils, ScaladocUtils}
 import io.swagger.models._
 import io.swagger.models.parameters._
 import io.swagger.models.properties._
@@ -40,18 +40,28 @@ class SwaggerController {
       val tag = new Tag()
       val tagName = if(controller.name.nonEmpty) controller.name else controller.instance.getClass.getSimpleName
       tag.setName(tagName)
-      if(controller.description.nonEmpty){ tag.setDescription(controller.description) }
+      if(controller.description.nonEmpty){
+        tag.setDescription(controller.description)
+      } else {
+        ScaladocUtils.getScaladoc(controller.instance.getClass).foreach { scaladoc =>
+          tag.setDescription(scaladoc.description)
+        }
+      }
       tags.put(tag.getName, tag)
 
       val path = paths.getOrElseUpdate(action.path, new Path())
       val operation = new Operation()
       operation.setOperationId(action.function.getName)
       operation.addTag(tagName)
-
+      val scaladoc = ScaladocUtils.getScaladoc(action.function)
       if(action.description.nonEmpty){
         operation.setDescription(action.description)
+      } else {
+        scaladoc.foreach { scaladoc =>
+          operation.setDescription(scaladoc.description)
+        }
       }
-      if(action.deprecated){
+      if(action.deprecated || ScaladocUtils.isDeprecated(action.function, scaladoc)){
         operation.setDeprecated(true)
       }
 
@@ -59,22 +69,46 @@ class SwaggerController {
         paramDef match {
           case ParamDef.PathParam(name, description, converter) =>
             val parameter = new PathParameter()
-            if(description.nonEmpty){ parameter.setDescription(description) }
+            if(description.nonEmpty){
+              parameter.setDescription(description)
+            } else {
+              ScaladocUtils.getParamDescription(name, scaladoc).foreach { description =>
+                parameter.setDescription(description)
+              }
+            }
             operation.addParameter(converter.parameter(parameter))
 
           case ParamDef.QueryParam(name, description, converter) =>
             val parameter = new QueryParameter()
-            if(description.nonEmpty){ parameter.setDescription(description) }
+            if(description.nonEmpty){
+              parameter.setDescription(description)
+            } else {
+              ScaladocUtils.getParamDescription(name, scaladoc).foreach { description =>
+                parameter.setDescription(description)
+              }
+            }
             operation.addParameter(converter.parameter(parameter))
 
           case ParamDef.HeaderParam(name, description, converter) =>
             val parameter = new HeaderParameter()
-            if(description.nonEmpty){ parameter.setDescription(description) }
+            if(description.nonEmpty){
+              parameter.setDescription(description)
+            } else {
+              ScaladocUtils.getParamDescription(name, scaladoc).foreach { description =>
+                parameter.setDescription(description)
+              }
+            }
             operation.addParameter(converter.parameter(parameter))
 
           case ParamDef.BodyParam(name, description, clazz, converter) =>
             val parameter = new BodyParameter()
-            if(description.nonEmpty){ parameter.setDescription(description) }
+            if(description.nonEmpty){
+              parameter.setDescription(description)
+            } else {
+              ScaladocUtils.getParamDescription(name, scaladoc).foreach { description =>
+                parameter.setDescription(description)
+              }
+            }
             operation.addParameter(converter.parameter(parameter))
             if(converter.isInstanceOf[JsonConverter]){
               models.put(clazz.getSimpleName, createModel(action.function, clazz, models))
@@ -87,6 +121,9 @@ class SwaggerController {
         val response = new Response()
         createProperty(action.function, models).map { property =>
           response.setSchema(property)
+        }
+        ScaladocUtils.getReturnDescription(scaladoc).foreach { description =>
+          response.setDescription(description)
         }
         operation.addResponse("200", response)
       }
