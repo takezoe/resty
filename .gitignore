@@ -21,3 +21,7 @@ project/plugins/project/
 # IntelliJ specific
 .idea/
 .idea_modules/
+
+# Metals specific
+.metals
+.bloop
