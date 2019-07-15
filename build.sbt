@@ -2,9 +2,9 @@ name := "resty"
 
 organization := "com.github.takezoe"
 
-version := "0.0.18"
+version := "0.0.19-SNAPSHOT"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
   "com.github.takezoe"           %% "runtime-scaladoc-reader"          % "1.0.1",
